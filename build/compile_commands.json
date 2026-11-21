@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/cao_libre_autogen/mocs_compilation.cpp.o -c /home/morvux/cao/build/cao_libre_autogen/mocs_compilation.cpp",
+  "file": "/home/morvux/cao/build/cao_libre_autogen/mocs_compilation.cpp",
+  "output": "CMakeFiles/cao_libre.dir/cao_libre_autogen/mocs_compilation.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/main.cpp.o -c /home/morvux/cao/src/main.cpp",
+  "file": "/home/morvux/cao/src/main.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/main.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/MainWindow.cpp.o -c /home/morvux/cao/src/MainWindow.cpp",
+  "file": "/home/morvux/cao/src/MainWindow.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/MainWindow.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/ViewerWidget.cpp.o -c /home/morvux/cao/src/ViewerWidget.cpp",
+  "file": "/home/morvux/cao/src/ViewerWidget.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/ViewerWidget.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/DialogueDimensions.cpp.o -c /home/morvux/cao/src/DialogueDimensions.cpp",
+  "file": "/home/morvux/cao/src/DialogueDimensions.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/DialogueDimensions.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/DialogueTransformation.cpp.o -c /home/morvux/cao/src/DialogueTransformation.cpp",
+  "file": "/home/morvux/cao/src/DialogueTransformation.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/DialogueTransformation.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/Document.cpp.o -c /home/morvux/cao/src/Document.cpp",
+  "file": "/home/morvux/cao/src/Document.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/Document.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/Modelisation.cpp.o -c /home/morvux/cao/src/Modelisation.cpp",
+  "file": "/home/morvux/cao/src/Modelisation.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/Modelisation.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/cao_libre_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -std=gnu++17 -o CMakeFiles/cao_libre.dir/src/GrilleAxes.cpp.o -c /home/morvux/cao/src/GrilleAxes.cpp",
+  "file": "/home/morvux/cao/src/GrilleAxes.cpp",
+  "output": "CMakeFiles/cao_libre.dir/src/GrilleAxes.cpp.o"
+}
+]
