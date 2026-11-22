@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=FreeTable3D
+GenericName=CAO pour l'impression 3D
+Comment=Logiciel libre de CAO pour l'impression 3D
+Comment[en]=Free CAD software for 3D printing
+Exec=freetable3d
+Icon=freetable3d
+Terminal=false
+Categories=Graphics;3DGraphics;Engineering;Qt;
+Keywords=CAO;CAD;3D;impression;STL;STEP;
+StartupWMClass=freetable3d

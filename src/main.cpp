@@ -6,6 +6,7 @@
 #include <QStyleFactory>
 #include <QtGlobal>
 
+#include "Icones.h"
 #include "MainWindow.h"
 
 namespace
@@ -91,6 +92,8 @@ int main(int argc, char* argv[])
     QApplication application(argc, argv);
     application.setApplicationName("FreeTable3D");
     application.setOrganizationName("FreeTable3D");
+    application.setDesktopFileName("freetable3d");
+    application.setWindowIcon(icones::creer("cube"));
     appliquerTheme(application);
 
     MainWindow fenetre;

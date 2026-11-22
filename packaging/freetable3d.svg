@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="#2b3038"/>
+
+  <!-- trajectoires des objets jonglés -->
+  <g fill="none" stroke="#4a5260" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 9">
+    <path d="M74 96 Q 80 40 128 40"/>
+    <path d="M182 96 Q 176 40 128 40"/>
+  </g>
+
+  <!-- cube -->
+  <polygon points="58,50 73,58 58,66 43,58" fill="#ffb273"/>
+  <polygon points="43,58 58,66 58,86 43,78" fill="#ff8a3d"/>
+  <polygon points="73,58 58,66 58,86 73,78" fill="#d96a1e"/>
+
+  <!-- sphère -->
+  <circle cx="128" cy="40" r="16" fill="#6fb7ff"/>
+  <circle cx="122" cy="34" r="5" fill="#c9e5ff"/>
+
+  <!-- triangle -->
+  <polygon points="198,48 215,80 181,80" fill="#7bd88f"/>
+  <polygon points="198,48 215,80 198,80" fill="#58b56e"/>
+
+  <!-- manchot -->
+  <path d="M100 138 Q80 124 72 102" fill="none" stroke="#5b7fb0" stroke-width="10" stroke-linecap="round"/>
+  <path d="M156 138 Q176 124 184 102" fill="none" stroke="#5b7fb0" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="112" cy="196" rx="13" ry="6" fill="#ff8a3d"/>
+  <ellipse cx="144" cy="196" rx="13" ry="6" fill="#ff8a3d"/>
+  <ellipse cx="128" cy="154" rx="30" ry="44" fill="#5b7fb0"/>
+  <circle cx="128" cy="114" r="23" fill="#5b7fb0"/>
+  <ellipse cx="128" cy="164" rx="19" ry="31" fill="#f4f7fb"/>
+  <ellipse cx="128" cy="119" rx="16" ry="14" fill="#f4f7fb"/>
+  <circle cx="121" cy="112" r="4.5" fill="#2b3038"/>
+  <circle cx="135" cy="112" r="4.5" fill="#2b3038"/>
+  <circle cx="122.5" cy="110.5" r="1.4" fill="#fff"/>
+  <circle cx="136.5" cy="110.5" r="1.4" fill="#fff"/>
+  <polygon points="122,119 134,119 128,129" fill="#ff8a3d"/>
+
+  <!-- inscription 3D -->
+  <g fill="none" stroke="#f2f4f7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M94 216 H113 L103 227 Q118 227 118 235 Q118 244 104 244 Q97 244 94 240"/>
+    <path d="M136 216 V244 H142 Q162 244 162 230 Q162 216 142 216 Z"/>
+  </g>
+</svg>

@@ -126,6 +126,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake"
   "/usr/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake"
   "/usr/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake"
+  "/usr/share/cmake-3.31/Modules/CPack.cmake"
+  "/usr/share/cmake-3.31/Modules/CPackComponent.cmake"
   "/usr/share/cmake-3.31/Modules/CheckCXXCompilerFlag.cmake"
   "/usr/share/cmake-3.31/Modules/CheckCXXSourceCompiles.cmake"
   "/usr/share/cmake-3.31/Modules/CheckIncludeFileCXX.cmake"
@@ -157,6 +159,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/usr/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake"
   "/usr/share/cmake-3.31/Modules/Platform/Linux.cmake"
   "/usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake"
+  "/usr/share/cmake-3.31/Templates/CPackConfig.cmake.in"
   )
 
 # The corresponding makefile is:
@@ -167,6 +170,8 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
+  "CPackConfig.cmake"
+  "CPackSourceConfig.cmake"
   "CMakeFiles/freetable3d_autogen.dir/AutogenInfo.json"
   ".qt/QtDeploySupport.cmake"
   ".qt/QtDeployTargets.cmake"

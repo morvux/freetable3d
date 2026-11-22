@@ -68,3 +68,24 @@ target_compile_definitions(freetable3d PRIVATE FREETABLE3D_VERSION="${PROJECT_VE
 
 target_include_directories(freetable3d PRIVATE ${OCCT_INCLUDE_DIR})
 target_link_libraries(freetable3d PRIVATE Qt6::Widgets ${OCCT_LIBRARIES})
+
+# --- Installation et paquet Debian (.deb) ---
+include(GNUInstallDirs)
+install(TARGETS freetable3d RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES packaging/freetable3d.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES packaging/freetable3d.svg
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR} RENAME copyright)
+
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "freetable3d")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_CONTACT "Olivier KREUDER <okpcbrumath@orange.fr>")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Logiciel libre de CAO pour l'impression 3D")
+set(CPACK_PACKAGE_DESCRIPTION
+    "FreeTable3D : modélisation 3D simple pour l'impression 3D, écrit en C++ avec OpenCascade et Qt 6.")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+set(CPACK_DEBIAN_PACKAGE_SECTION "graphics")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)   # dépendances déduites automatiquement
+set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)  # freetable3d_0.1.0_amd64.deb
+include(CPack)
