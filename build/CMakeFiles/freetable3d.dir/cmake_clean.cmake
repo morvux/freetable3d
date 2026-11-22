@@ -1,0 +1,37 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/freetable3d.dir/link.d"
+  "CMakeFiles/freetable3d_autogen.dir/AutogenUsed.txt"
+  "CMakeFiles/freetable3d_autogen.dir/ParseCache.txt"
+  "freetable3d_autogen"
+  "CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o"
+  "CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/Document.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/Document.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/Icones.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/Icones.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o.d"
+  "CMakeFiles/freetable3d.dir/src/main.cpp.o"
+  "CMakeFiles/freetable3d.dir/src/main.cpp.o.d"
+  "freetable3d"
+  "freetable3d.pdb"
+  "freetable3d_autogen/mocs_compilation.cpp"
+  "freetable3d_autogen/timestamp"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang CXX)
+  include(CMakeFiles/freetable3d.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
