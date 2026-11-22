@@ -8,23 +8,35 @@
 // (copier une forme ne copie pas ses données), cela reste très léger.
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include <TopoDS_Shape.hxx>
+#include <gp_Quaternion.hxx>
+#include <gp_Trsf.hxx>
+
+#include "Esquisse.h"
 
 struct Piece
 {
-    int          id = 0;
-    std::string  nom;
-    TopoDS_Shape forme;
+    int           id = 0;
+    std::string   nom;
+    TopoDS_Shape  forme;
+    gp_Quaternion orientation; // rotation cumulée depuis la création (identité au départ)
+
+    // Pièce paramétrique (issue d'une extrusion) : définition + placement actuel.
+    // Toute autre modification de la forme (congé, trou...) supprime la définition.
+    std::shared_ptr<const Parametrique> parametres;
+    gp_Trsf                             placement;
 };
 
 class Document
 {
 public:
     // Ajoute une pièce nommée « <nomBase> <id> » et retourne son identifiant.
-    int ajouter(const TopoDS_Shape& forme, const std::string& nomBase);
+    int ajouter(const TopoDS_Shape& forme, const std::string& nomBase,
+                std::shared_ptr<const Parametrique> parametres = nullptr);
 
     // Supprime les pièces indiquées (une seule étape d'annulation).
     void supprimer(const std::vector<int>& ids);
@@ -33,6 +45,41 @@ public:
     // (déplacement, arrondi, découpe...). Une seule étape d'annulation.
     void modifier(const std::vector<int>& ids,
                   const std::function<TopoDS_Shape(const TopoDS_Shape&)>& operation);
+
+    // Ajoute une rotation à l'orientation mémorisée des pièces indiquées. À appeler juste
+    // après modifier() : c'est la même étape d'annulation, il n'y a pas de nouvel instantané.
+    // Déplace / tourne des pièces : « calcul » donne la transformation de chaque pièce.
+    // Contrairement à modifier(), la définition paramétrique est conservée (placement mis à jour).
+    void transformer(const std::vector<int>& ids,
+                     const std::function<gp_Trsf(const TopoDS_Shape&)>& calcul);
+
+    // Nouvelle définition d'une pièce paramétrique : « forme » est la forme déjà placée.
+    void redefinirParametres(int id, const TopoDS_Shape& forme,
+                             std::shared_ptr<const Parametrique> parametres);
+
+    void composerOrientation(const std::vector<int>& ids, const gp_Quaternion& rotation);
+
+    // Remplace la forme de la pièce « idConservee » et supprime les pièces « idsSupprimees »
+    // (une seule étape d'annulation). Sert aux opérations booléennes.
+    void remplacer(int idConservee, const TopoDS_Shape& forme, const std::vector<int>& idsSupprimees);
+
+    // Enregistrement / ouverture d'un projet (fichier .ft3d (les anciens .cao restent lisibles) : formes OpenCascade au format BREP).
+    // charger() remplace tout le contenu et efface l'historique ; en cas d'échec le document
+    // reste inchangé.
+    bool enregistrer(const std::string& chemin) const;
+    bool charger(const std::string& chemin);
+
+    // Copie les pièces indiquées, une copie par transformation (symétrie, décalage...).
+    // Une seule étape d'annulation. Retourne les identifiants des copies.
+    // Avec conserverParametres = false (symétrie), les copies perdent leur définition paramétrique.
+    std::vector<int> dupliquer(const std::vector<int>& ids,
+                               const std::vector<gp_Trsf>& transformations,
+                               bool conserverParametres);
+
+    // Colle des pièces mémorisées (copiées depuis ce document ou un état précédent) :
+    // chaque modèle est transformé par « t » et reçoit un nouvel identifiant.
+    // Une seule étape d'annulation. Retourne les identifiants des nouvelles pièces.
+    std::vector<int> coller(const std::vector<Piece>& modeles, const gp_Trsf& t);
 
     void vider();
 

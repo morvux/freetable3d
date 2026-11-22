@@ -1,23 +1,37 @@
 #pragma once
 
 // Widget Qt qui affiche le document en 3D avec OpenCascade.
-// Souris : clic gauche = sélection (ou rotation en glissant), Maj+clic =
-// ajouter/retirer de la sélection, clic droit ou milieu = déplacement,
-// molette = zoom.
+//
+// Souris :
+//  - clic gauche : sélection ; Maj+clic : ajouter/retirer de la sélection
+//  - glisser sur le vide ou une pièce non sélectionnée : rotation de la vue
+//  - glisser une PIÈCE sélectionnée (mode Pièce) : la déplacer sur la grille
+//  - glisser une FACE PLANE sélectionnée (mode Face) : l'étirer ou la rentrer
+//  - clic droit ou milieu + glisser : déplacer la vue ; molette : zoom
 
 #include <vector>
 
+#include <QKeyEvent>
 #include <QPoint>
 #include <QString>
+#include <QVector>
 #include <QWidget>
 
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
+#include <Bnd_Box.hxx>
+#include <SelectMgr_EntityOwner.hxx>
 #include <TopoDS_Shape.hxx>
 #include <V3d_View.hxx>
 #include <V3d_Viewer.hxx>
+#include <gp_Ax3.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Pnt2d.hxx>
+#include <TopoDS_Wire.hxx>
+#include <gp_Vec.hxx>
 
 #include "Document.h"
+#include "Esquisse.h"
 #include "GrilleAxes.h"
 
 // Ce que le clic sélectionne : la pièce entière, une de ses faces ou une de ses arêtes.
@@ -26,6 +40,22 @@ enum class ModeSelection
     Piece,
     Face,
     Arete
+};
+
+// Axe de la rotation à la souris.
+enum class AxeRotation
+{
+    X,
+    Y,
+    Z
+};
+
+// Outil de dessin d'une esquisse.
+enum class OutilEsquisse
+{
+    Rectangle, // deux coins opposés
+    Cercle,    // centre puis un point du cercle
+    Polygone   // sommets successifs ; Entrée ou clic sur le premier sommet pour fermer
 };
 
 // Un élément actuellement sélectionné.
@@ -55,6 +85,9 @@ public:
     // Affiche ou masque la grille millimétrique et les axes.
     void afficherGrille(bool visible);
 
+    // Affiche (ou masque) le volume d'impression : plateau X × Y centré sur l'origine, hauteur Z.
+    void afficherPlateau(bool visible, double x, double y, double z);
+
     // Choisit ce que le clic sélectionne. Efface la sélection en cours.
     void definirModeSelection(ModeSelection mode);
 
@@ -64,9 +97,54 @@ public:
     // Sélectionne une pièce entière (mode Pièce uniquement). N'émet pas de signal.
     void selectionnerPiece(int idPiece);
 
+    // Pas d'aimantation à la grille, en mm, pour le déplacement et l'étirement
+    // à la souris (0 = libre).
+    void definirAimantation(double pasMm);
+
+    // Outil « rotation » : quand il est actif, glisser une pièce sélectionnée la fait
+    // tourner (glisser vers la droite = angle positif) au lieu de la déplacer.
+    void definirOutilRotation(bool actif);
+    void definirAxeRotation(AxeRotation axe);
+    // Pas d'aimantation des angles, en degrés (0 = libre).
+    void definirAimantationAngle(double pasDegres);
+
+    // Sélectionne plusieurs pièces entières (mode Pièce). N'émet pas de signal.
+    void selectionnerPieces(const std::vector<int>& ids);
+
+    // --- Esquisse 2D ---
+    // Démarre une esquisse sur le plan passant par « origine » de normale « normale » :
+    // la vue se place face au plan, et les clics ajoutent des points aimantés dans ce plan.
+    void demarrerEsquisse(const gp_Pnt& origine, const gp_Dir& normale);
+    void arreterEsquisse();
+    bool esquisseActive() const { return m_esquisseActive; }
+    void definirOutilEsquisse(OutilEsquisse outil);
+    void effacerDernierProfil();
+    // Profils fermés dessinés (faces planes) et normale du plan d'esquisse.
+    std::vector<TopoDS_Shape> profilsEsquisse() const { return m_profils; }
+    gp_Dir                    normaleEsquisse() const { return m_repere.Direction(); }
+    // Esquisse paramétrique complète (plan + profils), pour créer une pièce modifiable.
+    Esquisse esquisseCourante() const;
+
 signals:
     // Émis quand l'utilisateur change la sélection à la souris.
     void selectionChangee();
+
+    // Une pièce (ou plusieurs) vient d'être déplacée à la souris de (dx, dy) mm.
+    void deplacementTermine(const QVector<int>& ids, double dx, double dy);
+
+    // Une pièce (ou plusieurs) vient d'être tournée à la souris : angles en degrés
+    // autour des axes X, Y, Z (un seul est non nul).
+    void rotationTerminee(const QVector<int>& ids, double rx, double ry, double rz);
+
+    // Une face plane vient d'être étirée de « distance » mm (négative = rentrée).
+    void etirementTermine(int idPiece, const TopoDS_Shape& face, double distance);
+
+    // Texte à afficher pendant un geste (déplacement ou étirement en cours).
+    void messageApercu(const QString& message);
+
+    // Valeurs affichées près du curseur pendant un déplacement, une rotation ou un étirement
+    // (texte sur plusieurs lignes ; vide = geste terminé, on masque l'affichage).
+    void apercuGeste(const QString& texte);
 
 protected:
     // OpenCascade dessine directement dans la fenêtre : Qt ne doit pas le faire.
@@ -79,12 +157,26 @@ protected:
     void mouseMoveEvent(QMouseEvent* evenement) override;
     void mouseReleaseEvent(QMouseEvent* evenement) override;
     void wheelEvent(QWheelEvent* evenement) override;
+    void keyPressEvent(QKeyEvent* evenement) override;
+    bool event(QEvent* evenement) override;
 
 private:
+    QPoint versPixels(const QPointF& logique) const;
+
     struct ObjetAffiche
     {
         int               idPiece;
         Handle(AIS_Shape) objet;
+    };
+
+    // Geste en cours avec le bouton gauche.
+    enum class Geste
+    {
+        Aucun,
+        Rotation,
+        Deplacement,
+        Orientation,
+        Etirement
     };
 
     // Resynchronise la vue OpenCascade avec la taille réelle de la fenêtre native.
@@ -96,13 +188,97 @@ private:
     // Id de la pièce qui possède cet objet affiché (0 si inconnu).
     int idPieceDe(const Handle(AIS_InteractiveObject)& objet) const;
 
+    // --- Géométrie sous le curseur ---
+    // Rayon de vue passant par un point de l'écran.
+    bool rayonSousCurseur(const QPoint& ecran, gp_Pnt& origine, gp_Vec& direction) const;
+    // Intersection du rayon avec le plan du sol (Z = 0). Échoue si le plan est vu de profil.
+    bool pointSurPlanSol(const QPoint& ecran, gp_Pnt& point) const;
+    // Position, le long d'une droite (point + s * normale), du point le plus proche du rayon.
+    bool parametreSurDroite(const QPoint& ecran, const gp_Pnt& point,
+                            const gp_Vec& normale, double& s) const;
+    // Arrondit une valeur au pas d'aimantation.
+    double aimanter(double valeur) const;
+
+    // --- Gestes ---
+    // Retient les pièces sélectionnées (objets, identifiants, centres) et cumule leur boîte englobante.
+    bool rassemblerSelection(Bnd_Box& boite);
+    bool preparerDeplacement();
+    bool preparerOrientation();
+    void mettreAJourOrientation(const QPoint& ecran);
+    double aimanterAngle(double degres) const;
+    bool preparerEtirement(const Handle(SelectMgr_EntityOwner)& proprietaire);
+    void mettreAJourDeplacement(const QPoint& ecran);
+    void mettreAJourEtirement(const QPoint& ecran);
+    void terminerGeste();
+    void annoncerGeste(const QString& texte);
+
+    // --- Esquisse ---
+    bool pointSurEsquisse(const QPoint& ecran, gp_Pnt2d& uv) const;
+    gp_Pnt point3D(const gp_Pnt2d& uv) const;
+    TopoDS_Wire construireProfil(const std::vector<gp_Pnt2d>& points, const gp_Pnt2d* courant,
+                                 bool ferme) const;
+    void placerPointEsquisse(const QPoint& ecran);
+    void mettreAJourApercu(const gp_Pnt2d& uv);
+    void effacerApercu();
+    void ajouterProfil(const TopoDS_Wire& contour, const Profil& description);
+    void fermerPolygone();
+    void mettreAJourAffichageEsquisse();
+    void validerPointEsquisse(const gp_Pnt2d& uv);
+    // Point défini par les cotes tapées au clavier (dans la direction de la souris).
+    bool pointDepuisSaisie(gp_Pnt2d& uv) const;
+    void rafraichirApercuSaisie();
+
     Handle(V3d_Viewer)             m_viewer;
     Handle(V3d_View)               m_vue;
     Handle(AIS_InteractiveContext) m_contexte;
     Handle(GrilleAxes)             m_grille;
+    Handle(AIS_Shape)              m_plateau;
+    Handle(AIS_Shape)              m_volumePlateau;
     std::vector<ObjetAffiche>      m_objets;
     ModeSelection                  m_mode = ModeSelection::Piece;
     QPoint                         m_dernierePosition;
     QPoint                         m_positionPression;
     bool                           m_premierAffichage = true;
+
+    Geste  m_geste = Geste::Aucun;
+    bool   m_gesteDemarre = false;
+    double m_pasAimantation = 1.0;
+
+    // Déplacement
+    std::vector<Handle(AIS_Shape)> m_objetsDeplaces;
+    QVector<int>                   m_idsDeplaces;
+    gp_Pnt                         m_pointDepart;
+    double                         m_coinX = 0.0;
+    double                         m_coinY = 0.0;
+    double                         m_dx = 0.0;
+    double                         m_dy = 0.0;
+    std::vector<gp_Pnt>            m_centresDeplaces;
+
+    // Rotation à la souris
+    bool        m_outilRotation = false;
+    AxeRotation m_axe = AxeRotation::Z;
+    double      m_pasAngle = 15.0;
+    double      m_angle = 0.0;
+
+    // Étirement
+    Handle(AIS_Shape) m_objetEtire;
+    TopoDS_Shape      m_formeInitiale;
+    TopoDS_Shape      m_faceEtiree;
+    int               m_idEtire = 0;
+    gp_Pnt            m_pointFace;
+    gp_Vec            m_normaleFace;
+    double            m_s0 = 0.0;
+    double            m_distance = 0.0;
+
+    // Esquisse
+    bool                      m_esquisseActive = false;
+    gp_Ax3                    m_repere;
+    OutilEsquisse             m_outilEsquisse = OutilEsquisse::Rectangle;
+    std::vector<gp_Pnt2d>     m_pointsEnCours;
+    std::vector<TopoDS_Shape> m_profils;
+    std::vector<Profil>       m_descriptions; // même ordre que m_profils
+    Handle(AIS_Shape)         m_objetProfils;
+    Handle(AIS_Shape)         m_objetApercu;
+    QString                   m_saisie;     // cotes tapées au clavier
+    gp_Pnt2d                  m_dernierUV;  // dernière position de la souris dans le plan
 };

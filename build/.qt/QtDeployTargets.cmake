@@ -1,2 +1,2 @@
-set(__QT_DEPLOY_TARGET_cao_libre_FILE /home/morvux/cao/build/cao_libre)
-set(__QT_DEPLOY_TARGET_cao_libre_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_freetable3d_FILE /home/morvux/cao/build/freetable3d)
+set(__QT_DEPLOY_TARGET_freetable3d_TYPE EXECUTABLE)

@@ -117,74 +117,74 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named cao_libre
+# Target rules for targets named freetable3d
 
 # Build rule for target.
-cao_libre: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cao_libre
-.PHONY : cao_libre
+freetable3d: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 freetable3d
+.PHONY : freetable3d
 
 # fast build rule for target.
-cao_libre/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/build
-.PHONY : cao_libre/fast
+freetable3d/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/build
+.PHONY : freetable3d/fast
 
 #=============================================================================
-# Target rules for targets named cao_libre_autogen_timestamp_deps
+# Target rules for targets named freetable3d_autogen_timestamp_deps
 
 # Build rule for target.
-cao_libre_autogen_timestamp_deps: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cao_libre_autogen_timestamp_deps
-.PHONY : cao_libre_autogen_timestamp_deps
+freetable3d_autogen_timestamp_deps: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 freetable3d_autogen_timestamp_deps
+.PHONY : freetable3d_autogen_timestamp_deps
 
 # fast build rule for target.
-cao_libre_autogen_timestamp_deps/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre_autogen_timestamp_deps.dir/build.make CMakeFiles/cao_libre_autogen_timestamp_deps.dir/build
-.PHONY : cao_libre_autogen_timestamp_deps/fast
+freetable3d_autogen_timestamp_deps/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d_autogen_timestamp_deps.dir/build.make CMakeFiles/freetable3d_autogen_timestamp_deps.dir/build
+.PHONY : freetable3d_autogen_timestamp_deps/fast
 
 #=============================================================================
-# Target rules for targets named cao_libre_autogen
+# Target rules for targets named freetable3d_autogen
 
 # Build rule for target.
-cao_libre_autogen: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 cao_libre_autogen
-.PHONY : cao_libre_autogen
+freetable3d_autogen: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 freetable3d_autogen
+.PHONY : freetable3d_autogen
 
 # fast build rule for target.
-cao_libre_autogen/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre_autogen.dir/build.make CMakeFiles/cao_libre_autogen.dir/build
-.PHONY : cao_libre_autogen/fast
+freetable3d_autogen/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d_autogen.dir/build.make CMakeFiles/freetable3d_autogen.dir/build
+.PHONY : freetable3d_autogen/fast
 
-cao_libre_autogen/mocs_compilation.o: cao_libre_autogen/mocs_compilation.cpp.o
-.PHONY : cao_libre_autogen/mocs_compilation.o
+freetable3d_autogen/mocs_compilation.o: freetable3d_autogen/mocs_compilation.cpp.o
+.PHONY : freetable3d_autogen/mocs_compilation.o
 
 # target to build an object file
-cao_libre_autogen/mocs_compilation.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/cao_libre_autogen/mocs_compilation.cpp.o
-.PHONY : cao_libre_autogen/mocs_compilation.cpp.o
+freetable3d_autogen/mocs_compilation.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o
+.PHONY : freetable3d_autogen/mocs_compilation.cpp.o
 
-cao_libre_autogen/mocs_compilation.i: cao_libre_autogen/mocs_compilation.cpp.i
-.PHONY : cao_libre_autogen/mocs_compilation.i
+freetable3d_autogen/mocs_compilation.i: freetable3d_autogen/mocs_compilation.cpp.i
+.PHONY : freetable3d_autogen/mocs_compilation.i
 
 # target to preprocess a source file
-cao_libre_autogen/mocs_compilation.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/cao_libre_autogen/mocs_compilation.cpp.i
-.PHONY : cao_libre_autogen/mocs_compilation.cpp.i
+freetable3d_autogen/mocs_compilation.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.i
+.PHONY : freetable3d_autogen/mocs_compilation.cpp.i
 
-cao_libre_autogen/mocs_compilation.s: cao_libre_autogen/mocs_compilation.cpp.s
-.PHONY : cao_libre_autogen/mocs_compilation.s
+freetable3d_autogen/mocs_compilation.s: freetable3d_autogen/mocs_compilation.cpp.s
+.PHONY : freetable3d_autogen/mocs_compilation.s
 
 # target to generate assembly for a file
-cao_libre_autogen/mocs_compilation.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/cao_libre_autogen/mocs_compilation.cpp.s
-.PHONY : cao_libre_autogen/mocs_compilation.cpp.s
+freetable3d_autogen/mocs_compilation.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.s
+.PHONY : freetable3d_autogen/mocs_compilation.cpp.s
 
 src/DialogueDimensions.o: src/DialogueDimensions.cpp.o
 .PHONY : src/DialogueDimensions.o
 
 # target to build an object file
 src/DialogueDimensions.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueDimensions.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o
 .PHONY : src/DialogueDimensions.cpp.o
 
 src/DialogueDimensions.i: src/DialogueDimensions.cpp.i
@@ -192,7 +192,7 @@ src/DialogueDimensions.i: src/DialogueDimensions.cpp.i
 
 # target to preprocess a source file
 src/DialogueDimensions.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueDimensions.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.i
 .PHONY : src/DialogueDimensions.cpp.i
 
 src/DialogueDimensions.s: src/DialogueDimensions.cpp.s
@@ -200,7 +200,7 @@ src/DialogueDimensions.s: src/DialogueDimensions.cpp.s
 
 # target to generate assembly for a file
 src/DialogueDimensions.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueDimensions.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.s
 .PHONY : src/DialogueDimensions.cpp.s
 
 src/DialogueTransformation.o: src/DialogueTransformation.cpp.o
@@ -208,7 +208,7 @@ src/DialogueTransformation.o: src/DialogueTransformation.cpp.o
 
 # target to build an object file
 src/DialogueTransformation.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueTransformation.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o
 .PHONY : src/DialogueTransformation.cpp.o
 
 src/DialogueTransformation.i: src/DialogueTransformation.cpp.i
@@ -216,7 +216,7 @@ src/DialogueTransformation.i: src/DialogueTransformation.cpp.i
 
 # target to preprocess a source file
 src/DialogueTransformation.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueTransformation.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.i
 .PHONY : src/DialogueTransformation.cpp.i
 
 src/DialogueTransformation.s: src/DialogueTransformation.cpp.s
@@ -224,7 +224,7 @@ src/DialogueTransformation.s: src/DialogueTransformation.cpp.s
 
 # target to generate assembly for a file
 src/DialogueTransformation.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/DialogueTransformation.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.s
 .PHONY : src/DialogueTransformation.cpp.s
 
 src/Document.o: src/Document.cpp.o
@@ -232,7 +232,7 @@ src/Document.o: src/Document.cpp.o
 
 # target to build an object file
 src/Document.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Document.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Document.cpp.o
 .PHONY : src/Document.cpp.o
 
 src/Document.i: src/Document.cpp.i
@@ -240,7 +240,7 @@ src/Document.i: src/Document.cpp.i
 
 # target to preprocess a source file
 src/Document.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Document.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Document.cpp.i
 .PHONY : src/Document.cpp.i
 
 src/Document.s: src/Document.cpp.s
@@ -248,7 +248,7 @@ src/Document.s: src/Document.cpp.s
 
 # target to generate assembly for a file
 src/Document.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Document.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Document.cpp.s
 .PHONY : src/Document.cpp.s
 
 src/GrilleAxes.o: src/GrilleAxes.cpp.o
@@ -256,7 +256,7 @@ src/GrilleAxes.o: src/GrilleAxes.cpp.o
 
 # target to build an object file
 src/GrilleAxes.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/GrilleAxes.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o
 .PHONY : src/GrilleAxes.cpp.o
 
 src/GrilleAxes.i: src/GrilleAxes.cpp.i
@@ -264,7 +264,7 @@ src/GrilleAxes.i: src/GrilleAxes.cpp.i
 
 # target to preprocess a source file
 src/GrilleAxes.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/GrilleAxes.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.i
 .PHONY : src/GrilleAxes.cpp.i
 
 src/GrilleAxes.s: src/GrilleAxes.cpp.s
@@ -272,15 +272,39 @@ src/GrilleAxes.s: src/GrilleAxes.cpp.s
 
 # target to generate assembly for a file
 src/GrilleAxes.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/GrilleAxes.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.s
 .PHONY : src/GrilleAxes.cpp.s
+
+src/Icones.o: src/Icones.cpp.o
+.PHONY : src/Icones.o
+
+# target to build an object file
+src/Icones.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Icones.cpp.o
+.PHONY : src/Icones.cpp.o
+
+src/Icones.i: src/Icones.cpp.i
+.PHONY : src/Icones.i
+
+# target to preprocess a source file
+src/Icones.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Icones.cpp.i
+.PHONY : src/Icones.cpp.i
+
+src/Icones.s: src/Icones.cpp.s
+.PHONY : src/Icones.s
+
+# target to generate assembly for a file
+src/Icones.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Icones.cpp.s
+.PHONY : src/Icones.cpp.s
 
 src/MainWindow.o: src/MainWindow.cpp.o
 .PHONY : src/MainWindow.o
 
 # target to build an object file
 src/MainWindow.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/MainWindow.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o
 .PHONY : src/MainWindow.cpp.o
 
 src/MainWindow.i: src/MainWindow.cpp.i
@@ -288,7 +312,7 @@ src/MainWindow.i: src/MainWindow.cpp.i
 
 # target to preprocess a source file
 src/MainWindow.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/MainWindow.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/MainWindow.cpp.i
 .PHONY : src/MainWindow.cpp.i
 
 src/MainWindow.s: src/MainWindow.cpp.s
@@ -296,7 +320,7 @@ src/MainWindow.s: src/MainWindow.cpp.s
 
 # target to generate assembly for a file
 src/MainWindow.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/MainWindow.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/MainWindow.cpp.s
 .PHONY : src/MainWindow.cpp.s
 
 src/Modelisation.o: src/Modelisation.cpp.o
@@ -304,7 +328,7 @@ src/Modelisation.o: src/Modelisation.cpp.o
 
 # target to build an object file
 src/Modelisation.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Modelisation.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o
 .PHONY : src/Modelisation.cpp.o
 
 src/Modelisation.i: src/Modelisation.cpp.i
@@ -312,7 +336,7 @@ src/Modelisation.i: src/Modelisation.cpp.i
 
 # target to preprocess a source file
 src/Modelisation.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Modelisation.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Modelisation.cpp.i
 .PHONY : src/Modelisation.cpp.i
 
 src/Modelisation.s: src/Modelisation.cpp.s
@@ -320,15 +344,39 @@ src/Modelisation.s: src/Modelisation.cpp.s
 
 # target to generate assembly for a file
 src/Modelisation.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/Modelisation.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Modelisation.cpp.s
 .PHONY : src/Modelisation.cpp.s
+
+src/PanneauProprietes.o: src/PanneauProprietes.cpp.o
+.PHONY : src/PanneauProprietes.o
+
+# target to build an object file
+src/PanneauProprietes.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o
+.PHONY : src/PanneauProprietes.cpp.o
+
+src/PanneauProprietes.i: src/PanneauProprietes.cpp.i
+.PHONY : src/PanneauProprietes.i
+
+# target to preprocess a source file
+src/PanneauProprietes.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.i
+.PHONY : src/PanneauProprietes.cpp.i
+
+src/PanneauProprietes.s: src/PanneauProprietes.cpp.s
+.PHONY : src/PanneauProprietes.s
+
+# target to generate assembly for a file
+src/PanneauProprietes.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.s
+.PHONY : src/PanneauProprietes.cpp.s
 
 src/ViewerWidget.o: src/ViewerWidget.cpp.o
 .PHONY : src/ViewerWidget.o
 
 # target to build an object file
 src/ViewerWidget.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/ViewerWidget.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o
 .PHONY : src/ViewerWidget.cpp.o
 
 src/ViewerWidget.i: src/ViewerWidget.cpp.i
@@ -336,7 +384,7 @@ src/ViewerWidget.i: src/ViewerWidget.cpp.i
 
 # target to preprocess a source file
 src/ViewerWidget.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/ViewerWidget.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.i
 .PHONY : src/ViewerWidget.cpp.i
 
 src/ViewerWidget.s: src/ViewerWidget.cpp.s
@@ -344,7 +392,7 @@ src/ViewerWidget.s: src/ViewerWidget.cpp.s
 
 # target to generate assembly for a file
 src/ViewerWidget.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/ViewerWidget.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.s
 .PHONY : src/ViewerWidget.cpp.s
 
 src/main.o: src/main.cpp.o
@@ -352,7 +400,7 @@ src/main.o: src/main.cpp.o
 
 # target to build an object file
 src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/main.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/main.cpp.o
 .PHONY : src/main.cpp.o
 
 src/main.i: src/main.cpp.i
@@ -360,7 +408,7 @@ src/main.i: src/main.cpp.i
 
 # target to preprocess a source file
 src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/main.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/main.cpp.i
 .PHONY : src/main.cpp.i
 
 src/main.s: src/main.cpp.s
@@ -368,7 +416,7 @@ src/main.s: src/main.cpp.s
 
 # target to generate assembly for a file
 src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/cao_libre.dir/build.make CMakeFiles/cao_libre.dir/src/main.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
 # Help Target
@@ -379,12 +427,12 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... cao_libre_autogen"
-	@echo "... cao_libre_autogen_timestamp_deps"
-	@echo "... cao_libre"
-	@echo "... cao_libre_autogen/mocs_compilation.o"
-	@echo "... cao_libre_autogen/mocs_compilation.i"
-	@echo "... cao_libre_autogen/mocs_compilation.s"
+	@echo "... freetable3d_autogen"
+	@echo "... freetable3d_autogen_timestamp_deps"
+	@echo "... freetable3d"
+	@echo "... freetable3d_autogen/mocs_compilation.o"
+	@echo "... freetable3d_autogen/mocs_compilation.i"
+	@echo "... freetable3d_autogen/mocs_compilation.s"
 	@echo "... src/DialogueDimensions.o"
 	@echo "... src/DialogueDimensions.i"
 	@echo "... src/DialogueDimensions.s"
@@ -397,12 +445,18 @@ help:
 	@echo "... src/GrilleAxes.o"
 	@echo "... src/GrilleAxes.i"
 	@echo "... src/GrilleAxes.s"
+	@echo "... src/Icones.o"
+	@echo "... src/Icones.i"
+	@echo "... src/Icones.s"
 	@echo "... src/MainWindow.o"
 	@echo "... src/MainWindow.i"
 	@echo "... src/MainWindow.s"
 	@echo "... src/Modelisation.o"
 	@echo "... src/Modelisation.i"
 	@echo "... src/Modelisation.s"
+	@echo "... src/PanneauProprietes.o"
+	@echo "... src/PanneauProprietes.i"
+	@echo "... src/PanneauProprietes.s"
 	@echo "... src/ViewerWidget.o"
 	@echo "... src/ViewerWidget.i"
 	@echo "... src/ViewerWidget.s"

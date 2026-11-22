@@ -1,6 +1,12 @@
 #include "ViewerWidget.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+
+#include <QEvent>
 #include <QLocale>
+#include <QRegularExpression>
 #include <QMouseEvent>
 #include <QObject>
 #include <QTimer>
@@ -12,12 +18,24 @@
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepBndLib.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRep_Builder.hxx>
+#include <Standard_Failure.hxx>
+#include <TopoDS_Compound.hxx>
+#include <gp_Ax2.hxx>
+#include <gp_Circ.hxx>
 #include <BRepGProp.hxx>
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <GeomAbs_CurveType.hxx>
 #include <GeomAbs_SurfaceType.hxx>
 #include <OpenGl_GraphicDriver.hxx>
+#include <Aspect_GradientFillMethod.hxx>
+#include <Graphic3d_NameOfMaterial.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Prs3d_LineAspect.hxx>
 #include <Prs3d_TypeOfHighlight.hxx>
@@ -25,6 +43,11 @@
 #include <StdSelect_BRepOwner.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS.hxx>
+#include <gp_Ax1.hxx>
+#include <gp_Dir.hxx>
+#include <gp_Trsf.hxx>
+
+#include "Modelisation.h"
 
 #ifdef _WIN32
 #include <WNT_Window.hxx>
@@ -144,7 +167,17 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     if (!fenetre->IsMapped())
         fenetre->Map();
 
-    m_vue->SetBackgroundColor(Quantity_Color(0.15, 0.17, 0.20, Quantity_TOC_RGB));
+    // Fond en dégradé sombre, lissage des arêtes
+    m_vue->SetBackgroundColor(Quantity_Color(0.10, 0.12, 0.15, Quantity_TOC_RGB));
+    m_vue->SetBgGradientColors(Quantity_Color(0.20, 0.24, 0.30, Quantity_TOC_RGB),
+                               Quantity_Color(0.07, 0.08, 0.10, Quantity_TOC_RGB),
+                               Aspect_GFM_VER, false);
+    m_vue->ChangeRenderingParams().IsAntialiasingEnabled = true;
+#ifdef Q_OS_WIN
+    m_vue->ChangeRenderingParams().NbMsaaSamples = 2; // plus léger sur les cartes graphiques intégrées
+#else
+    m_vue->ChangeRenderingParams().NbMsaaSamples = 4;
+#endif
     m_vue->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_WHITE, 0.08, V3d_ZBUFFER);
     m_vue->SetProj(V3d_XposYnegZpos);
     m_vue->MustBeResized();
@@ -184,7 +217,8 @@ void ViewerWidget::afficherDocument(const Document& document)
     for (const Piece& piece : document.pieces())
     {
         Handle(AIS_Shape) objet = new AIS_Shape(piece.forme);
-        objet->SetColor(Quantity_Color(0.72, 0.76, 0.82, Quantity_TOC_RGB));
+        objet->SetMaterial(Graphic3d_NameOfMaterial_Plastified); // d'abord la matière,
+        objet->SetColor(Quantity_Color(0.62, 0.70, 0.80, Quantity_TOC_RGB)); // puis la couleur
 
         // Arêtes dessinées en sombre : on distingue les faces et on voit les arêtes à choisir.
         objet->Attributes()->SetFaceBoundaryDraw(true);
@@ -197,12 +231,73 @@ void ViewerWidget::afficherDocument(const Document& document)
     m_contexte->UpdateCurrentViewer();
 }
 
+void ViewerWidget::afficherPlateau(bool visible, double x, double y, double z)
+{
+    if (!m_plateau.IsNull())
+    {
+        m_contexte->Remove(m_plateau, false);
+        m_plateau.Nullify();
+    }
+    if (!m_volumePlateau.IsNull())
+    {
+        m_contexte->Remove(m_volumePlateau, false);
+        m_volumePlateau.Nullify();
+    }
+
+    if (visible && x > 0.0 && y > 0.0 && z > 0.0)
+    {
+        // Plateau : dalle fine sous Z = 0 (évite de se confondre avec la grille), translucide
+        m_plateau = new AIS_Shape(BRepPrimAPI_MakeBox(gp_Pnt(-x / 2.0, -y / 2.0, -0.3), x, y, 0.3).Shape());
+        m_plateau->SetColor(Quantity_Color(0.25, 0.65, 0.45, Quantity_TOC_RGB));
+        m_plateau->SetTransparency(0.6);
+        m_contexte->Display(m_plateau, AIS_Shaded, -1, false);
+
+        // Volume d'impression : contour filaire
+        m_volumePlateau = new AIS_Shape(BRepPrimAPI_MakeBox(gp_Pnt(-x / 2.0, -y / 2.0, 0.0), x, y, z).Shape());
+        m_volumePlateau->SetColor(Quantity_Color(0.35, 0.85, 0.55, Quantity_TOC_RGB));
+        m_volumePlateau->SetWidth(1.5);
+        m_contexte->Display(m_volumePlateau, AIS_WireFrame, -1, false);
+    }
+    m_contexte->UpdateCurrentViewer();
+}
+
 void ViewerWidget::afficherGrille(bool visible)
 {
     if (visible)
         m_contexte->Display(m_grille, 0, -1, true);
     else
         m_contexte->Erase(m_grille, true);
+}
+
+void ViewerWidget::definirAimantation(double pasMm)
+{
+    m_pasAimantation = pasMm;
+}
+
+void ViewerWidget::definirOutilRotation(bool actif)
+{
+    m_outilRotation = actif;
+}
+
+void ViewerWidget::definirAxeRotation(AxeRotation axe)
+{
+    m_axe = axe;
+}
+
+void ViewerWidget::definirAimantationAngle(double pasDegres)
+{
+    m_pasAngle = pasDegres;
+}
+
+void ViewerWidget::selectionnerPieces(const std::vector<int>& ids)
+{
+    m_contexte->ClearSelected(false);
+    for (const ObjetAffiche& affiche : m_objets)
+    {
+        if (std::find(ids.begin(), ids.end(), affiche.idPiece) != ids.end())
+            m_contexte->AddOrRemoveSelected(affiche.objet, false);
+    }
+    m_contexte->UpdateCurrentViewer();
 }
 
 void ViewerWidget::recadrer()
@@ -288,9 +383,329 @@ void ViewerWidget::ajusterVue()
     m_vue->Redraw();
 }
 
+// ---------------------------------------------------------------------------
+// Géométrie sous le curseur
+// ---------------------------------------------------------------------------
+
+bool ViewerWidget::rayonSousCurseur(const QPoint& ecran, gp_Pnt& origine, gp_Vec& direction) const
+{
+    Standard_Real x = 0, y = 0, z = 0, vx = 0, vy = 0, vz = 0;
+    m_vue->ConvertWithProj(ecran.x(), ecran.y(), x, y, z, vx, vy, vz);
+
+    origine   = gp_Pnt(x, y, z);
+    direction = gp_Vec(vx, vy, vz);
+    if (direction.Magnitude() < 1e-9)
+        return false;
+
+    direction.Normalize();
+    return true;
+}
+
+bool ViewerWidget::pointSurPlanSol(const QPoint& ecran, gp_Pnt& point) const
+{
+    gp_Pnt origine;
+    gp_Vec direction;
+    if (!rayonSousCurseur(ecran, origine, direction))
+        return false;
+
+    // Plan du sol vu presque de profil : le déplacement n'aurait pas de sens.
+    if (std::abs(direction.Z()) < 0.05)
+        return false;
+
+    const double t = -origine.Z() / direction.Z();
+    point = gp_Pnt(origine.X() + t * direction.X(),
+                   origine.Y() + t * direction.Y(),
+                   0.0);
+    return true;
+}
+
+bool ViewerWidget::parametreSurDroite(const QPoint& ecran, const gp_Pnt& point,
+                                      const gp_Vec& normale, double& s) const
+{
+    gp_Pnt origine;
+    gp_Vec direction;
+    if (!rayonSousCurseur(ecran, origine, direction))
+        return false;
+
+    // Points les plus proches de deux droites : P(s) = point + s * normale
+    // (normale de longueur 1) et Q(t) = origine + t * direction.
+    const gp_Vec w0(origine, point);
+    const double b = normale.Dot(direction);
+    const double denominateur = 1.0 - b * b;
+    if (denominateur < 1e-6)
+        return false; // droite alignée avec la ligne de visée
+
+    const double d = normale.Dot(w0);
+    const double e = direction.Dot(w0);
+    s = (b * e - d) / denominateur;
+    return true;
+}
+
+double ViewerWidget::aimanter(double valeur) const
+{
+    if (m_pasAimantation <= 0.0)
+        return valeur;
+    return std::round(valeur / m_pasAimantation) * m_pasAimantation;
+}
+
+// ---------------------------------------------------------------------------
+// Gestes : déplacement d'une pièce, étirement d'une face
+// ---------------------------------------------------------------------------
+
+bool ViewerWidget::rassemblerSelection(Bnd_Box& boite)
+{
+    m_idsDeplaces.clear();
+    m_objetsDeplaces.clear();
+    m_centresDeplaces.clear();
+
+    for (const ElementSelectionne& element : selection())
+    {
+        if (m_idsDeplaces.contains(element.idPiece))
+            continue;
+
+        for (const ObjetAffiche& affiche : m_objets)
+        {
+            if (affiche.idPiece != element.idPiece)
+                continue;
+
+            const Bnd_Box& boiteObjet = affiche.objet->BoundingBox();
+            if (boiteObjet.IsVoid())
+                continue;
+
+            double xmin = 0, ymin = 0, zmin = 0, xmax = 0, ymax = 0, zmax = 0;
+            boiteObjet.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+
+            m_objetsDeplaces.push_back(affiche.objet);
+            m_centresDeplaces.push_back(
+                gp_Pnt((xmin + xmax) / 2.0, (ymin + ymax) / 2.0, (zmin + zmax) / 2.0));
+            boite.Add(boiteObjet);
+        }
+        m_idsDeplaces.append(element.idPiece);
+    }
+    return !m_objetsDeplaces.empty() && !boite.IsVoid();
+}
+
+bool ViewerWidget::preparerDeplacement()
+{
+    if (!pointSurPlanSol(m_positionPression, m_pointDepart))
+        return false;
+
+    Bnd_Box boite;
+    if (!rassemblerSelection(boite))
+        return false;
+
+    // Le coin le plus bas-gauche de la boîte englobante sert de repère d'aimantation.
+    double zmin = 0, xmax = 0, ymax = 0, zmax = 0;
+    boite.Get(m_coinX, m_coinY, zmin, xmax, ymax, zmax);
+    m_dx = 0.0;
+    m_dy = 0.0;
+    return true;
+}
+
+bool ViewerWidget::preparerEtirement(const Handle(SelectMgr_EntityOwner)& proprietaire)
+{
+    Handle(StdSelect_BRepOwner) brep = Handle(StdSelect_BRepOwner)::DownCast(proprietaire);
+    if (brep.IsNull() || !brep->HasShape())
+        return false;
+
+    gp_Pnt point;
+    gp_Vec normale;
+    if (!modelisation::reperFacePlane(brep->Shape(), point, normale))
+        return false; // seules les faces planes peuvent être étirées
+
+    Handle(AIS_Shape) objet = Handle(AIS_Shape)::DownCast(brep->Selectable());
+    if (objet.IsNull())
+        return false;
+
+    const int id = idPieceDe(objet);
+    if (id == 0)
+        return false;
+
+    double s0 = 0.0;
+    if (!parametreSurDroite(m_positionPression, point, normale, s0))
+        return false;
+
+    m_idEtire       = id;
+    m_objetEtire    = objet;
+    m_formeInitiale = objet->Shape();
+    m_faceEtiree    = brep->Shape();
+    m_pointFace     = point;
+    m_normaleFace   = normale;
+    m_s0            = s0;
+    m_distance      = 0.0;
+    return true;
+}
+
+void ViewerWidget::mettreAJourDeplacement(const QPoint& ecran)
+{
+    gp_Pnt courant;
+    if (!pointSurPlanSol(ecran, courant))
+        return;
+
+    // On aimante la position finale du coin de référence, pas le déplacement brut :
+    // la pièce se pose ainsi exactement sur la grille.
+    const double cibleX = aimanter(m_coinX + courant.X() - m_pointDepart.X());
+    const double cibleY = aimanter(m_coinY + courant.Y() - m_pointDepart.Y());
+    m_dx = cibleX - m_coinX;
+    m_dy = cibleY - m_coinY;
+
+    gp_Trsf translation;
+    translation.SetTranslation(gp_Vec(m_dx, m_dy, 0.0));
+    for (const Handle(AIS_Shape)& objet : m_objetsDeplaces)
+        objet->SetLocalTransformation(translation);
+    m_contexte->UpdateCurrentViewer();
+
+    auto n = [](double v) { return QString::number(v == 0.0 ? 0.0 : v, 'f', 2); };
+    annoncerGeste(tr("Position : X = %1 mm, Y = %2 mm\nDéplacement : ΔX = %3, ΔY = %4 mm")
+                      .arg(n(cibleX), n(cibleY), n(m_dx), n(m_dy)));
+}
+
+void ViewerWidget::mettreAJourEtirement(const QPoint& ecran)
+{
+    double s = 0.0;
+    if (!parametreSurDroite(ecran, m_pointFace, m_normaleFace, s))
+        return;
+
+    const double distance = aimanter(s - m_s0);
+    if (distance == m_distance)
+        return; // rien de neuf : on évite de recalculer la pièce
+
+    m_distance = distance;
+    m_objetEtire->SetShape(modelisation::etirerFace(m_formeInitiale, m_faceEtiree, distance));
+    m_contexte->Redisplay(m_objetEtire, true);
+
+    const modelisation::Mesures m = modelisation::mesurer(m_objetEtire->Shape());
+    QString dimensions;
+    if (m.boiteValide)
+        dimensions = tr("\nDimensions : %1 × %2 × %3 mm")
+                         .arg(QString::number(m.xmax - m.xmin, 'f', 2),
+                              QString::number(m.ymax - m.ymin, 'f', 2),
+                              QString::number(m.zmax - m.zmin, 'f', 2));
+    annoncerGeste(tr("Étirement : %1 mm%2").arg(QString::number(distance, 'f', 2), dimensions));
+}
+
+bool ViewerWidget::preparerOrientation()
+{
+    Bnd_Box boite;
+    if (!rassemblerSelection(boite))
+        return false;
+
+    m_angle = 0.0;
+    return true;
+}
+
+double ViewerWidget::aimanterAngle(double degres) const
+{
+    if (m_pasAngle <= 0.0)
+        return degres;
+    return std::round(degres / m_pasAngle) * m_pasAngle;
+}
+
+void ViewerWidget::mettreAJourOrientation(const QPoint& ecran)
+{
+    // 0,5° par pixel parcouru horizontalement ; vers la droite = angle positif
+    // (règle de la main droite autour de l'axe choisi).
+    m_angle = aimanterAngle((ecran.x() - m_positionPression.x()) * 0.5);
+
+    QString nomAxe = QStringLiteral("Z");
+    gp_Dir direction(0.0, 0.0, 1.0);
+    if (m_axe == AxeRotation::X)
+    {
+        nomAxe = QStringLiteral("X");
+        direction = gp_Dir(1.0, 0.0, 0.0);
+    }
+    else if (m_axe == AxeRotation::Y)
+    {
+        nomAxe = QStringLiteral("Y");
+        direction = gp_Dir(0.0, 1.0, 0.0);
+    }
+
+    constexpr double pi = 3.14159265358979323846;
+    for (std::size_t i = 0; i < m_objetsDeplaces.size(); ++i)
+    {
+        // Chaque pièce tourne autour de son propre centre.
+        gp_Trsf rotation;
+        rotation.SetRotation(gp_Ax1(m_centresDeplaces[i], direction), m_angle * pi / 180.0);
+        m_objetsDeplaces[i]->SetLocalTransformation(rotation);
+    }
+    m_contexte->UpdateCurrentViewer();
+
+    annoncerGeste(tr("Rotation autour de %1 : %2°")
+                      .arg(nomAxe, QString::number(m_angle, 'f', 1)));
+}
+
+void ViewerWidget::annoncerGeste(const QString& texte)
+{
+    QString pourBarre = texte;
+    pourBarre.replace('\n', QStringLiteral("   |   "));
+    emit messageApercu(pourBarre);
+    emit apercuGeste(texte);
+}
+
+void ViewerWidget::terminerGeste()
+{
+    emit apercuGeste(QString()); // masque l'affichage près du curseur
+    const Geste geste = m_geste;
+    m_geste = Geste::Aucun;
+    m_gesteDemarre = false;
+
+    if (geste == Geste::Deplacement)
+    {
+        for (const Handle(AIS_Shape)& objet : m_objetsDeplaces)
+            objet->ResetTransformation();
+        m_contexte->UpdateCurrentViewer();
+        m_objetsDeplaces.clear();
+
+        if (m_dx != 0.0 || m_dy != 0.0)
+            emit deplacementTermine(m_idsDeplaces, m_dx, m_dy);
+    }
+    else if (geste == Geste::Orientation)
+    {
+        for (const Handle(AIS_Shape)& objet : m_objetsDeplaces)
+            objet->ResetTransformation();
+        m_contexte->UpdateCurrentViewer();
+        m_objetsDeplaces.clear();
+
+        if (m_angle != 0.0)
+        {
+            const double rx = (m_axe == AxeRotation::X) ? m_angle : 0.0;
+            const double ry = (m_axe == AxeRotation::Y) ? m_angle : 0.0;
+            const double rz = (m_axe == AxeRotation::Z) ? m_angle : 0.0;
+            emit rotationTerminee(m_idsDeplaces, rx, ry, rz);
+        }
+    }
+    else if (geste == Geste::Etirement)
+    {
+        const Handle(AIS_Shape) objet = m_objetEtire;
+        m_objetEtire.Nullify();
+
+        if (m_distance != 0.0)
+        {
+            emit etirementTermine(m_idEtire, m_faceEtiree, m_distance);
+        }
+        else
+        {
+            objet->SetShape(m_formeInitiale);
+            m_contexte->Redisplay(objet, true);
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Événements Qt
+// ---------------------------------------------------------------------------
+
 void ViewerWidget::paintEvent(QPaintEvent*)
 {
     m_vue->Redraw();
+}
+
+QPoint ViewerWidget::versPixels(const QPointF& logique) const
+{
+    // OpenCascade travaille en pixels réels de la fenêtre ; Qt donne des coordonnées
+    // logiques. Les deux diffèrent dès que l'affichage Windows est à 125 %, 150 %...
+    const qreal f = devicePixelRatioF();
+    return QPoint(qRound(logique.x() * f), qRound(logique.y() * f));
 }
 
 void ViewerWidget::resizeEvent(QResizeEvent*)
@@ -315,19 +730,74 @@ void ViewerWidget::showEvent(QShowEvent*)
 
 void ViewerWidget::mousePressEvent(QMouseEvent* evenement)
 {
-    m_dernierePosition = evenement->position().toPoint();
+    m_dernierePosition = versPixels(evenement->position());
     m_positionPression = m_dernierePosition;
-    if (evenement->button() == Qt::LeftButton)
+    m_gesteDemarre = false;
+    m_geste = Geste::Aucun;
+
+    if (evenement->button() != Qt::LeftButton)
+        return;
+
+    m_geste = Geste::Rotation; // par défaut : on fait tourner la vue
+
+    // Appui sur un élément DÉJÀ sélectionné : on le déplace (pièce) ou on l'étire (face plane).
+    if (!m_esquisseActive && !evenement->modifiers().testFlag(Qt::ShiftModifier))
+    {
+        m_contexte->MoveTo(m_dernierePosition.x(), m_dernierePosition.y(), m_vue, false);
+        if (m_contexte->HasDetected())
+        {
+            const Handle(SelectMgr_EntityOwner) proprietaire = m_contexte->DetectedOwner();
+            if (!proprietaire.IsNull() && m_contexte->IsSelected(proprietaire))
+            {
+                if (m_mode == ModeSelection::Piece && m_outilRotation && preparerOrientation())
+                    m_geste = Geste::Orientation;
+                else if (m_mode == ModeSelection::Piece && !m_outilRotation && preparerDeplacement())
+                    m_geste = Geste::Deplacement;
+                else if (m_mode == ModeSelection::Face && preparerEtirement(proprietaire))
+                    m_geste = Geste::Etirement;
+            }
+        }
+    }
+
+    if (m_geste == Geste::Rotation)
         m_vue->StartRotation(m_dernierePosition.x(), m_dernierePosition.y());
 }
 
 void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
 {
-    const QPoint position = evenement->position().toPoint();
+    const QPoint position = versPixels(evenement->position());
 
     if (evenement->buttons() & Qt::LeftButton)
     {
-        m_vue->Rotation(position.x(), position.y());
+        if (m_geste == Geste::Rotation)
+        {
+            m_vue->Rotation(position.x(), position.y());
+        }
+        else if (m_geste == Geste::Deplacement || m_geste == Geste::Orientation
+                 || m_geste == Geste::Etirement)
+        {
+            if (!m_gesteDemarre)
+            {
+                // On attend un vrai glissement : un simple clic reste une sélection.
+                if ((position - m_positionPression).manhattanLength() <= 4)
+                    return;
+                m_gesteDemarre = true;
+
+                if (m_geste == Geste::Etirement)
+                {
+                    // Pendant l'étirement, la face n'a plus à rester en surbrillance.
+                    m_contexte->ClearSelected(true);
+                    emit selectionChangee();
+                }
+            }
+
+            if (m_geste == Geste::Deplacement)
+                mettreAJourDeplacement(position);
+            else if (m_geste == Geste::Orientation)
+                mettreAJourOrientation(position);
+            else
+                mettreAJourEtirement(position);
+        }
     }
     else if (evenement->buttons() & (Qt::RightButton | Qt::MiddleButton))
     {
@@ -337,8 +807,25 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
     }
     else
     {
-        // Simple survol : mise en surbrillance de l'élément sous le curseur
-        m_contexte->MoveTo(position.x(), position.y(), m_vue, true);
+        if (m_esquisseActive)
+        {
+            // Esquisse : aperçu du profil en cours de tracé
+            gp_Pnt2d uv;
+            if (pointSurEsquisse(position, uv))
+            {
+                m_dernierUV = uv;
+                gp_Pnt2d saisi;
+                if (!m_saisie.isEmpty() && pointDepuisSaisie(saisi))
+                    mettreAJourApercu(saisi);
+                else
+                    mettreAJourApercu(uv);
+            }
+        }
+        else
+        {
+            // Simple survol : mise en surbrillance de l'élément sous le curseur
+            m_contexte->MoveTo(position.x(), position.y(), m_vue, true);
+        }
     }
 }
 
@@ -347,11 +834,27 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
     if (evenement->button() != Qt::LeftButton)
         return;
 
-    const QPoint position = evenement->position().toPoint();
+    // Fin d'un déplacement ou d'un étirement
+    if (m_gesteDemarre)
+    {
+        terminerGeste();
+        return;
+    }
+
+    m_geste = Geste::Aucun;
+
+    const QPoint position = versPixels(evenement->position());
 
     // Un glissement est une rotation, pas une sélection.
     if ((position - m_positionPression).manhattanLength() > 4)
         return;
+
+    // En esquisse, un clic place un point au lieu de sélectionner.
+    if (m_esquisseActive)
+    {
+        placerPointEsquisse(position);
+        return;
+    }
 
     const AIS_SelectionScheme schema = evenement->modifiers().testFlag(Qt::ShiftModifier)
                                            ? AIS_SelectionScheme_XOR
@@ -365,7 +868,517 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
 
 void ViewerWidget::wheelEvent(QWheelEvent* evenement)
 {
-    const QPoint position = evenement->position().toPoint();
+    const QPoint position = versPixels(evenement->position());
+
+    // Souris : angleDelta (120 par cran). Pavé tactile : valeurs plus petites, ou seulement
+    // pixelDelta selon le système.
+    int delta = evenement->angleDelta().y();
+    if (delta == 0)
+        delta = evenement->pixelDelta().y() * 2;
+    if (delta == 0)
+        delta = evenement->angleDelta().x();
+    if (delta == 0)
+        return;
+
+    // Zoom centré sur le curseur ; si la vue n'a pas bougé, on applique directement
+    // un changement d'échelle (proportionnel à la valeur reçue, donc doux au pavé tactile).
+    const double avant = m_vue->Scale();
     m_vue->StartZoomAtPoint(position.x(), position.y());
-    m_vue->ZoomAtPoint(0, 0, evenement->angleDelta().y(), 0);
+    m_vue->ZoomAtPoint(0, 0, delta, 0);
+    if (std::abs(m_vue->Scale() - avant) <= 1e-9 * std::abs(avant))
+        m_vue->SetScale(avant * std::pow(1.0015, delta));
+    m_vue->Redraw();
+    evenement->accept();
+}
+
+// ---------------------------------------------------------------------------
+// Esquisse 2D
+// ---------------------------------------------------------------------------
+
+void ViewerWidget::demarrerEsquisse(const gp_Pnt& origine, const gp_Dir& normale)
+{
+    arreterEsquisse();
+
+    // Direction « u » du plan : X du monde, ou Z pour un plan vertical
+    const gp_Dir indice = std::abs(normale.Z()) > 0.9 ? gp_Dir(1.0, 0.0, 0.0) : gp_Dir(0.0, 0.0, 1.0);
+    m_repere = gp_Ax3(origine, normale, indice);
+
+    m_esquisseActive = true;
+    m_outilEsquisse  = OutilEsquisse::Rectangle;
+    m_pointsEnCours.clear();
+    m_profils.clear();
+    m_descriptions.clear();
+
+    // La vue se place face au plan d'esquisse
+    m_vue->SetProj(normale.X(), normale.Y(), normale.Z());
+    recadrer();
+}
+
+void ViewerWidget::arreterEsquisse()
+{
+    effacerApercu();
+    if (!m_objetProfils.IsNull())
+    {
+        m_contexte->Remove(m_objetProfils, false);
+        m_objetProfils.Nullify();
+    }
+    m_pointsEnCours.clear();
+    m_profils.clear();
+    m_descriptions.clear();
+    m_esquisseActive = false;
+    m_saisie.clear();
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::definirOutilEsquisse(OutilEsquisse outil)
+{
+    m_outilEsquisse = outil;
+    m_pointsEnCours.clear();
+    m_saisie.clear();
+    effacerApercu();
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::effacerDernierProfil()
+{
+    if (!m_profils.empty())
+        m_profils.pop_back();
+    if (!m_descriptions.empty())
+        m_descriptions.pop_back();
+    mettreAJourAffichageEsquisse();
+}
+
+Esquisse ViewerWidget::esquisseCourante() const
+{
+    Esquisse e;
+    e.origine = m_repere.Location();
+    e.normale = m_repere.Direction();
+    e.axeU    = m_repere.XDirection();
+    e.profils = m_descriptions;
+    return e;
+}
+
+bool ViewerWidget::pointSurEsquisse(const QPoint& ecran, gp_Pnt2d& uv) const
+{
+    gp_Pnt origine;
+    gp_Vec direction;
+    if (!rayonSousCurseur(ecran, origine, direction))
+        return false;
+
+    const gp_Vec normale(m_repere.Direction());
+    const double denominateur = normale.Dot(direction);
+    if (std::abs(denominateur) < 0.05)
+        return false; // plan vu de profil
+
+    const double t = normale.Dot(gp_Vec(origine, m_repere.Location())) / denominateur;
+    const gp_Pnt  sur(origine.X() + t * direction.X(),
+                      origine.Y() + t * direction.Y(),
+                      origine.Z() + t * direction.Z());
+    const gp_Vec  w(m_repere.Location(), sur);
+
+    uv = gp_Pnt2d(aimanter(w.Dot(gp_Vec(m_repere.XDirection()))),
+                  aimanter(w.Dot(gp_Vec(m_repere.YDirection()))));
+    return true;
+}
+
+gp_Pnt ViewerWidget::point3D(const gp_Pnt2d& uv) const
+{
+    const gp_Vec deplacement = gp_Vec(m_repere.XDirection()) * uv.X()
+                             + gp_Vec(m_repere.YDirection()) * uv.Y();
+    return m_repere.Location().Translated(deplacement);
+}
+
+TopoDS_Wire ViewerWidget::construireProfil(const std::vector<gp_Pnt2d>& points,
+                                           const gp_Pnt2d* courant, bool ferme) const
+{
+    try
+    {
+        switch (m_outilEsquisse)
+        {
+        case OutilEsquisse::Rectangle:
+        {
+            if (points.size() != 1 || !courant)
+                return TopoDS_Wire();
+            const gp_Pnt2d a = points[0];
+            const gp_Pnt2d b = *courant;
+            if (std::abs(a.X() - b.X()) < 1e-6 || std::abs(a.Y() - b.Y()) < 1e-6)
+                return TopoDS_Wire();
+
+            BRepBuilderAPI_MakePolygon polygone(point3D(gp_Pnt2d(a.X(), a.Y())),
+                                                point3D(gp_Pnt2d(b.X(), a.Y())),
+                                                point3D(gp_Pnt2d(b.X(), b.Y())),
+                                                point3D(gp_Pnt2d(a.X(), b.Y())), true);
+            return polygone.IsDone() ? polygone.Wire() : TopoDS_Wire();
+        }
+
+        case OutilEsquisse::Cercle:
+        {
+            if (points.size() != 1 || !courant)
+                return TopoDS_Wire();
+            const double rayon = points[0].Distance(*courant);
+            if (rayon < 1e-6)
+                return TopoDS_Wire();
+
+            const gp_Circ cercle(gp_Ax2(point3D(points[0]), m_repere.Direction(), m_repere.XDirection()),
+                                 rayon);
+            BRepBuilderAPI_MakeEdge arete(cercle);
+            if (!arete.IsDone())
+                return TopoDS_Wire();
+            BRepBuilderAPI_MakeWire fil(arete.Edge());
+            return fil.IsDone() ? fil.Wire() : TopoDS_Wire();
+        }
+
+        case OutilEsquisse::Polygone:
+        {
+            std::vector<gp_Pnt2d> sommets = points;
+            if (courant && !ferme)
+                sommets.push_back(*courant);
+
+            BRepBuilderAPI_MakePolygon polygone;
+            const gp_Pnt2d* precedent = nullptr;
+            int nombre = 0;
+            for (const gp_Pnt2d& sommet : sommets)
+            {
+                if (precedent && precedent->Distance(sommet) < 1e-6)
+                    continue;
+                polygone.Add(point3D(sommet));
+                precedent = &sommet;
+                ++nombre;
+            }
+            if (nombre < (ferme ? 3 : 2))
+                return TopoDS_Wire();
+            if (ferme)
+                polygone.Close();
+            return polygone.IsDone() ? polygone.Wire() : TopoDS_Wire();
+        }
+        }
+    }
+    catch (const Standard_Failure&)
+    {
+    }
+    return TopoDS_Wire();
+}
+
+void ViewerWidget::effacerApercu()
+{
+    if (!m_objetApercu.IsNull())
+    {
+        m_contexte->Remove(m_objetApercu, false);
+        m_objetApercu.Nullify();
+    }
+}
+
+void ViewerWidget::mettreAJourApercu(const gp_Pnt2d& uv)
+{
+    effacerApercu();
+
+    if (!m_pointsEnCours.empty())
+    {
+        const TopoDS_Wire contour = construireProfil(m_pointsEnCours, &uv, false);
+        if (!contour.IsNull())
+        {
+            m_objetApercu = new AIS_Shape(contour);
+            m_objetApercu->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
+            m_objetApercu->SetWidth(2.5);
+            m_contexte->Display(m_objetApercu, AIS_WireFrame, -1, false);
+        }
+
+        const QLocale lieu;
+        const gp_Pnt2d& depart = m_pointsEnCours.front();
+        if (m_outilEsquisse == OutilEsquisse::Rectangle)
+            emit messageApercu(QObject::tr("Rectangle : %1 × %2 mm")
+                                   .arg(lieu.toString(std::abs(uv.X() - depart.X()), 'f', 2),
+                                        lieu.toString(std::abs(uv.Y() - depart.Y()), 'f', 2)));
+        else if (m_outilEsquisse == OutilEsquisse::Cercle)
+            emit messageApercu(QObject::tr("Cercle : rayon %1 mm, diamètre %2 mm")
+                                   .arg(lieu.toString(depart.Distance(uv), 'f', 2),
+                                        lieu.toString(2.0 * depart.Distance(uv), 'f', 2)));
+        else
+            emit messageApercu(QObject::tr("Polygone : %1 sommet(s) — Entrée ou clic sur le 1er sommet pour fermer")
+                                   .arg(static_cast<int>(m_pointsEnCours.size())));
+    }
+    else
+    {
+        const QLocale lieu;
+        emit messageApercu(QObject::tr("Esquisse : position (%1 ; %2) mm")
+                               .arg(lieu.toString(uv.X(), 'f', 2), lieu.toString(uv.Y(), 'f', 2)));
+    }
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::ajouterProfil(const TopoDS_Wire& contour, const Profil& description)
+{
+    if (contour.IsNull())
+        return;
+
+    BRepBuilderAPI_MakeFace face(contour, true);
+    if (!face.IsDone())
+        return;
+
+    m_profils.push_back(face.Face());
+    m_descriptions.push_back(description);
+    mettreAJourAffichageEsquisse();
+}
+
+void ViewerWidget::fermerPolygone()
+{
+    if (m_outilEsquisse != OutilEsquisse::Polygone || m_pointsEnCours.size() < 3)
+        return;
+
+    Profil description;
+    description.type = TypeProfil::Polygone;
+    for (const gp_Pnt2d& sommet : m_pointsEnCours)
+    {
+        description.v.push_back(sommet.X());
+        description.v.push_back(sommet.Y());
+    }
+    ajouterProfil(construireProfil(m_pointsEnCours, nullptr, true), description);
+    m_pointsEnCours.clear();
+    effacerApercu();
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::placerPointEsquisse(const QPoint& ecran)
+{
+    gp_Pnt2d uv;
+    if (!pointSurEsquisse(ecran, uv))
+        return;
+
+    m_dernierUV = uv;
+    gp_Pnt2d saisi;
+    if (!m_saisie.isEmpty() && pointDepuisSaisie(saisi))
+        uv = saisi;
+    validerPointEsquisse(uv);
+}
+
+void ViewerWidget::validerPointEsquisse(const gp_Pnt2d& uv)
+{
+    m_saisie.clear();
+
+    switch (m_outilEsquisse)
+    {
+    case OutilEsquisse::Rectangle:
+    case OutilEsquisse::Cercle:
+        if (m_pointsEnCours.empty())
+        {
+            m_pointsEnCours.push_back(uv);
+        }
+        else
+        {
+            Profil description;
+            const gp_Pnt2d depart = m_pointsEnCours.front();
+            if (m_outilEsquisse == OutilEsquisse::Rectangle)
+            {
+                description.type = TypeProfil::Rectangle;
+                description.v = {std::min(depart.X(), uv.X()), std::min(depart.Y(), uv.Y()),
+                                 std::abs(uv.X() - depart.X()), std::abs(uv.Y() - depart.Y())};
+            }
+            else
+            {
+                description.type = TypeProfil::Cercle;
+                description.v = {depart.X(), depart.Y(), depart.Distance(uv)};
+            }
+            ajouterProfil(construireProfil(m_pointsEnCours, &uv, true), description);
+            m_pointsEnCours.clear();
+            effacerApercu();
+            m_contexte->UpdateCurrentViewer();
+        }
+        break;
+
+    case OutilEsquisse::Polygone:
+    {
+        const double tolerance = std::max(0.5, m_pasAimantation * 0.5);
+        if (m_pointsEnCours.size() >= 3 && m_pointsEnCours.front().Distance(uv) < tolerance)
+        {
+            fermerPolygone();
+        }
+        else if (m_pointsEnCours.empty() || m_pointsEnCours.back().Distance(uv) > 1e-6)
+        {
+            m_pointsEnCours.push_back(uv);
+        }
+        break;
+    }
+    }
+}
+
+void ViewerWidget::mettreAJourAffichageEsquisse()
+{
+    if (!m_objetProfils.IsNull())
+    {
+        m_contexte->Remove(m_objetProfils, false);
+        m_objetProfils.Nullify();
+    }
+
+    if (!m_profils.empty())
+    {
+        BRep_Builder constructeur;
+        TopoDS_Compound ensemble;
+        constructeur.MakeCompound(ensemble);
+        for (const TopoDS_Shape& profil : m_profils)
+            constructeur.Add(ensemble, profil);
+
+        m_objetProfils = new AIS_Shape(ensemble);
+        m_objetProfils->SetColor(Quantity_Color(0.2, 0.8, 1.0, Quantity_TOC_RGB));
+        m_objetProfils->SetTransparency(0.5);
+        m_objetProfils->SetWidth(2.5);
+        m_objetProfils->Attributes()->SetFaceBoundaryDraw(true);
+        m_objetProfils->Attributes()->SetFaceBoundaryAspect(
+            new Prs3d_LineAspect(Quantity_Color(0.2, 0.8, 1.0, Quantity_TOC_RGB), Aspect_TOL_SOLID, 2.5));
+        m_contexte->Display(m_objetProfils, AIS_Shaded, -1, false);
+    }
+    m_contexte->UpdateCurrentViewer();
+}
+
+namespace
+{
+
+// Nombres contenus dans un texte tapé (séparés par x, espace, ;...), virgule ou point décimal.
+std::vector<double> nombresDe(const QString& texte)
+{
+    std::vector<double> valeurs;
+    const QStringList morceaux = texte.split(QRegularExpression(QStringLiteral("[^0-9.,]+")),
+                                             Qt::SkipEmptyParts);
+    for (QString morceau : morceaux)
+    {
+        morceau.replace(',', '.');
+        bool ok = false;
+        const double v = morceau.toDouble(&ok);
+        if (ok)
+            valeurs.push_back(v);
+    }
+    return valeurs;
+}
+
+} // namespace
+
+bool ViewerWidget::pointDepuisSaisie(gp_Pnt2d& uv) const
+{
+    if (m_pointsEnCours.empty() || m_saisie.isEmpty())
+        return false;
+
+    const std::vector<double> v = nombresDe(m_saisie);
+    if (v.empty() || v[0] <= 0.0)
+        return false;
+
+    const gp_Pnt2d depart = m_pointsEnCours.back();
+    const double sensU = m_dernierUV.X() < depart.X() ? -1.0 : 1.0;
+    const double sensV = m_dernierUV.Y() < depart.Y() ? -1.0 : 1.0;
+
+    switch (m_outilEsquisse)
+    {
+    case OutilEsquisse::Rectangle:
+    {
+        const double largeur = v[0];
+        const double hauteur = v.size() > 1 ? v[1] : v[0]; // une seule valeur : carré
+        if (hauteur <= 0.0)
+            return false;
+        uv = gp_Pnt2d(depart.X() + sensU * largeur, depart.Y() + sensV * hauteur);
+        return true;
+    }
+
+    case OutilEsquisse::Cercle:
+    {
+        // « d20 » = diamètre 20 mm ; sinon la valeur est le rayon
+        const bool diametre = m_saisie.startsWith('d', Qt::CaseInsensitive);
+        uv = gp_Pnt2d(depart.X() + (diametre ? v[0] / 2.0 : v[0]), depart.Y());
+        return true;
+    }
+
+    case OutilEsquisse::Polygone:
+    {
+        // Longueur du côté, dans la direction de la souris
+        double dx = m_dernierUV.X() - depart.X();
+        double dy = m_dernierUV.Y() - depart.Y();
+        const double norme = std::hypot(dx, dy);
+        if (norme < 1e-9) { dx = 1.0; dy = 0.0; }
+        else              { dx /= norme; dy /= norme; }
+        uv = gp_Pnt2d(depart.X() + dx * v[0], depart.Y() + dy * v[0]);
+        return true;
+    }
+    }
+    return false;
+}
+
+void ViewerWidget::rafraichirApercuSaisie()
+{
+    gp_Pnt2d saisi;
+    if (pointDepuisSaisie(saisi))
+        mettreAJourApercu(saisi);
+
+    const QString aide = m_outilEsquisse == OutilEsquisse::Rectangle
+                             ? QObject::tr("largeur x hauteur")
+                             : (m_outilEsquisse == OutilEsquisse::Cercle ? QObject::tr("rayon (d20 = diamètre)")
+                                                                          : QObject::tr("longueur du côté"));
+    emit messageApercu(QObject::tr("Cote saisie : %1   [%2] — Entrée pour valider, Retour arrière pour corriger")
+                           .arg(m_saisie, aide));
+}
+
+bool ViewerWidget::event(QEvent* evenement)
+{
+    // Pendant un tracé, les chiffres et quelques lettres servent à saisir des cotes : on les
+    // empêche de déclencher les raccourcis de la fenêtre (vues 1-4, X = extruder...).
+    if (evenement->type() == QEvent::ShortcutOverride && m_esquisseActive && !m_pointsEnCours.empty())
+    {
+        auto* touche = static_cast<QKeyEvent*>(evenement);
+        const QString t = touche->text();
+        const bool saisie = (!t.isEmpty() && QStringLiteral("0123456789.,xXdD ;").contains(t[0]))
+                            || touche->key() == Qt::Key_Backspace
+                            || touche->key() == Qt::Key_Return || touche->key() == Qt::Key_Enter
+                            || touche->key() == Qt::Key_Escape;
+        if (saisie && touche->modifiers() == Qt::NoModifier)
+        {
+            evenement->accept();
+            return true;
+        }
+    }
+    return QWidget::event(evenement);
+}
+
+void ViewerWidget::keyPressEvent(QKeyEvent* evenement)
+{
+    if (m_esquisseActive)
+    {
+        const QString t = evenement->text();
+
+        if (!m_pointsEnCours.empty() && evenement->modifiers() == Qt::NoModifier)
+        {
+            if (!t.isEmpty() && QStringLiteral("0123456789.,xXdD ;").contains(t[0]))
+            {
+                m_saisie += t;
+                rafraichirApercuSaisie();
+                return;
+            }
+            if (evenement->key() == Qt::Key_Backspace && !m_saisie.isEmpty())
+            {
+                m_saisie.chop(1);
+                rafraichirApercuSaisie();
+                return;
+            }
+        }
+
+        if (evenement->key() == Qt::Key_Return || evenement->key() == Qt::Key_Enter)
+        {
+            gp_Pnt2d saisi;
+            if (!m_saisie.isEmpty() && pointDepuisSaisie(saisi))
+                validerPointEsquisse(saisi);
+            else
+                fermerPolygone();
+            return;
+        }
+        if (evenement->key() == Qt::Key_Escape)
+        {
+            if (!m_saisie.isEmpty())
+            {
+                m_saisie.clear();
+                effacerApercu();
+                m_contexte->UpdateCurrentViewer();
+                return;
+            }
+            m_pointsEnCours.clear();
+            effacerApercu();
+            m_contexte->UpdateCurrentViewer();
+            return;
+        }
+    }
+    QWidget::keyPressEvent(evenement);
 }

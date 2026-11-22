@@ -167,7 +167,7 @@ set(CMAKE_MAKEFILE_OUTPUTS
 
 # Byproducts of CMake generate step:
 set(CMAKE_MAKEFILE_PRODUCTS
-  "CMakeFiles/cao_libre_autogen.dir/AutogenInfo.json"
+  "CMakeFiles/freetable3d_autogen.dir/AutogenInfo.json"
   ".qt/QtDeploySupport.cmake"
   ".qt/QtDeployTargets.cmake"
   "CMakeFiles/CMakeDirectoryInformation.cmake"
@@ -175,7 +175,7 @@ set(CMAKE_MAKEFILE_PRODUCTS
 
 # Dependency information for all targets:
 set(CMAKE_DEPEND_INFO_FILES
-  "CMakeFiles/cao_libre.dir/DependInfo.cmake"
-  "CMakeFiles/cao_libre_autogen_timestamp_deps.dir/DependInfo.cmake"
-  "CMakeFiles/cao_libre_autogen.dir/DependInfo.cmake"
+  "CMakeFiles/freetable3d.dir/DependInfo.cmake"
+  "CMakeFiles/freetable3d_autogen_timestamp_deps.dir/DependInfo.cmake"
+  "CMakeFiles/freetable3d_autogen.dir/DependInfo.cmake"
   )

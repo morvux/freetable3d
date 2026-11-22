@@ -20,9 +20,8 @@ CMAKE_ADDR2LINE:FILEPATH=/usr/bin/addr2line
 //Path to a program.
 CMAKE_AR:FILEPATH=/usr/bin/ar
 
-//Choose the type of build, options are: None Debug Release RelWithDebInfo
-// MinSizeRel ...
-CMAKE_BUILD_TYPE:STRING=
+//Type de compilation
+CMAKE_BUILD_TYPE:STRING=Release
 
 //Enable/Disable color output during build.
 CMAKE_COLOR_MAKEFILE:BOOL=ON
@@ -170,16 +169,16 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=CaoLibre
+CMAKE_PROJECT_NAME:STATIC=FreeTable3D
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION:STATIC=0.3.0
+CMAKE_PROJECT_VERSION:STATIC=0.1.0
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION_MAJOR:STATIC=0
 
 //Value Computed by CMake
-CMAKE_PROJECT_VERSION_MINOR:STATIC=3
+CMAKE_PROJECT_VERSION_MINOR:STATIC=1
 
 //Value Computed by CMake
 CMAKE_PROJECT_VERSION_PATCH:STATIC=0
@@ -253,13 +252,13 @@ CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-CaoLibre_BINARY_DIR:STATIC=/home/morvux/cao/build
+FreeTable3D_BINARY_DIR:STATIC=/home/morvux/cao/build
 
 //Value Computed by CMake
-CaoLibre_IS_TOP_LEVEL:STATIC=ON
+FreeTable3D_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-CaoLibre_SOURCE_DIR:STATIC=/home/morvux/cao
+FreeTable3D_SOURCE_DIR:STATIC=/home/morvux/cao
 
 //Path to a file.
 OCCT_INCLUDE_DIR:PATH=/usr/include/opencascade
@@ -275,6 +274,9 @@ OCCT_LIB_TKBO:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKBO.so
 
 //Path to a library.
 OCCT_LIB_TKBRep:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKBRep.so
+
+//Path to a library.
+OCCT_LIB_TKFillet:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKFillet.so
 
 //Path to a library.
 OCCT_LIB_TKG2d:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKG2d.so
@@ -296,6 +298,9 @@ OCCT_LIB_TKMath:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKMath.so
 
 //Path to a library.
 OCCT_LIB_TKMesh:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKMesh.so
+
+//Path to a library.
+OCCT_LIB_TKOffset:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKOffset.so
 
 //Path to a library.
 OCCT_LIB_TKOpenGl:FILEPATH=/usr/lib/x86_64-linux-gnu/libTKOpenGl.so
@@ -359,9 +364,6 @@ OPENGL_opengl_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libOpenGL.so
 
 //Path to a file.
 OPENGL_xmesa_INCLUDE_DIR:PATH=OPENGL_xmesa_INCLUDE_DIR-NOTFOUND
-
-//The directory containing a CMake configuration file for OpenCASCADE.
-OpenCASCADE_DIR:PATH=/usr/lib/x86_64-linux-gnu/cmake/opencascade
 
 //Arguments to supply to pkg-config
 PKG_CONFIG_ARGN:STRING=
