@@ -18,6 +18,8 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/morvux/cao/src/MainWindow.cpp" "CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o.d"
   "/home/morvux/cao/src/Modelisation.cpp" "CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o.d"
   "/home/morvux/cao/src/PanneauProprietes.cpp" "CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o.d"
+  "/home/morvux/cao/src/Traduction.cpp" "CMakeFiles/freetable3d.dir/src/Traduction.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/Traduction.cpp.o.d"
+  "/home/morvux/cao/src/TraductionEn.cpp" "CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o.d"
   "/home/morvux/cao/src/ViewerWidget.cpp" "CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o.d"
   "/home/morvux/cao/src/main.cpp" "CMakeFiles/freetable3d.dir/src/main.cpp.o" "gcc" "CMakeFiles/freetable3d.dir/src/main.cpp.o.d"
   "" "freetable3d" "gcc" "CMakeFiles/freetable3d.dir/link.d"

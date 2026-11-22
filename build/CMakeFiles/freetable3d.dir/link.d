@@ -11,6 +11,8 @@ freetable3d: \
   CMakeFiles/freetable3d.dir/src/Document.cpp.o \
   CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o \
   CMakeFiles/freetable3d.dir/src/Icones.cpp.o \
+  CMakeFiles/freetable3d.dir/src/Traduction.cpp.o \
+  CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o \
   CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o \
   CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o \
   /usr/lib/x86_64-linux-gnu/libQt6Widgets.so.6.8.2 \
@@ -158,6 +160,10 @@ CMakeFiles/freetable3d.dir/src/Document.cpp.o:
 CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o:
 
 CMakeFiles/freetable3d.dir/src/Icones.cpp.o:
+
+CMakeFiles/freetable3d.dir/src/Traduction.cpp.o:
+
+CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o:
 
 CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o:
 

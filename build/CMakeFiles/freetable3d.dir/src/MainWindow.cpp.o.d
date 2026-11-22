@@ -851,6 +851,8 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /home/morvux/cao/src/GrilleAxes.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QAction \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QCoreApplication \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qcoreapplication.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QActionGroup \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qactiongroup.h \
  /usr/include/opencascade/BRepBuilderAPI_Transform.hxx \
@@ -972,4 +974,5 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/QIcon \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qicon.h \
  /home/morvux/cao/src/DialogueTransformation.h \
+ /home/morvux/cao/src/Traduction.h \
  /home/morvux/cao/src/PanneauProprietes.h

@@ -436,6 +436,54 @@ src/PanneauProprietes.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.s
 .PHONY : src/PanneauProprietes.cpp.s
 
+src/Traduction.o: src/Traduction.cpp.o
+.PHONY : src/Traduction.o
+
+# target to build an object file
+src/Traduction.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Traduction.cpp.o
+.PHONY : src/Traduction.cpp.o
+
+src/Traduction.i: src/Traduction.cpp.i
+.PHONY : src/Traduction.i
+
+# target to preprocess a source file
+src/Traduction.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Traduction.cpp.i
+.PHONY : src/Traduction.cpp.i
+
+src/Traduction.s: src/Traduction.cpp.s
+.PHONY : src/Traduction.s
+
+# target to generate assembly for a file
+src/Traduction.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/Traduction.cpp.s
+.PHONY : src/Traduction.cpp.s
+
+src/TraductionEn.o: src/TraductionEn.cpp.o
+.PHONY : src/TraductionEn.o
+
+# target to build an object file
+src/TraductionEn.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o
+.PHONY : src/TraductionEn.cpp.o
+
+src/TraductionEn.i: src/TraductionEn.cpp.i
+.PHONY : src/TraductionEn.i
+
+# target to preprocess a source file
+src/TraductionEn.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.i
+.PHONY : src/TraductionEn.cpp.i
+
+src/TraductionEn.s: src/TraductionEn.cpp.s
+.PHONY : src/TraductionEn.s
+
+# target to generate assembly for a file
+src/TraductionEn.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.s
+.PHONY : src/TraductionEn.cpp.s
+
 src/ViewerWidget.o: src/ViewerWidget.cpp.o
 .PHONY : src/ViewerWidget.o
 
@@ -528,6 +576,12 @@ help:
 	@echo "... src/PanneauProprietes.o"
 	@echo "... src/PanneauProprietes.i"
 	@echo "... src/PanneauProprietes.s"
+	@echo "... src/Traduction.o"
+	@echo "... src/Traduction.i"
+	@echo "... src/Traduction.s"
+	@echo "... src/TraductionEn.o"
+	@echo "... src/TraductionEn.i"
+	@echo "... src/TraductionEn.s"
 	@echo "... src/ViewerWidget.o"
 	@echo "... src/ViewerWidget.i"
 	@echo "... src/ViewerWidget.s"

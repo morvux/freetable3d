@@ -20,6 +20,9 @@ freetable3d_autogen/timestamp: \
 	/home/morvux/cao/src/Modelisation.h \
 	/home/morvux/cao/src/PanneauProprietes.cpp \
 	/home/morvux/cao/src/PanneauProprietes.h \
+	/home/morvux/cao/src/Traduction.cpp \
+	/home/morvux/cao/src/Traduction.h \
+	/home/morvux/cao/src/TraductionEn.cpp \
 	/home/morvux/cao/src/ViewerWidget.cpp \
 	/home/morvux/cao/src/ViewerWidget.h \
 	/home/morvux/cao/src/main.cpp \

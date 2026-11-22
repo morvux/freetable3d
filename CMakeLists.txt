@@ -53,6 +53,9 @@ add_executable(freetable3d
     src/Esquisse.h
     src/Icones.h
     src/Icones.cpp
+    src/Traduction.h
+    src/Traduction.cpp
+    src/TraductionEn.cpp
     src/Modelisation.h
     src/Modelisation.cpp
     src/GrilleAxes.h

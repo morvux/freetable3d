@@ -7,6 +7,7 @@
 #include <QtGlobal>
 
 #include "Icones.h"
+#include "Traduction.h"
 #include "MainWindow.h"
 
 namespace
@@ -94,6 +95,7 @@ int main(int argc, char* argv[])
     application.setOrganizationName("FreeTable3D");
     application.setDesktopFileName("freetable3d");
     application.setWindowIcon(icones::creer("cube"));
+    traduction::installer(application);
     appliquerTheme(application);
 
     MainWindow fenetre;

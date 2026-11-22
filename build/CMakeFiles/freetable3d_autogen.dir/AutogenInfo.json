@@ -290,6 +290,12 @@
 			null
 		],
 		[
+			"/home/morvux/cao/src/Traduction.h",
+			"Mu",
+			"UVLADIE3JM/moc_Traduction.cpp",
+			null
+		],
+		[
 			"/home/morvux/cao/src/ViewerWidget.h",
 			"Mu",
 			"UVLADIE3JM/moc_ViewerWidget.cpp",
@@ -371,6 +377,8 @@
 		[ "/home/morvux/cao/src/MainWindow.cpp", "Mu", null ],
 		[ "/home/morvux/cao/src/Modelisation.cpp", "Mu", null ],
 		[ "/home/morvux/cao/src/PanneauProprietes.cpp", "Mu", null ],
+		[ "/home/morvux/cao/src/Traduction.cpp", "Mu", null ],
+		[ "/home/morvux/cao/src/TraductionEn.cpp", "Mu", null ],
 		[ "/home/morvux/cao/src/ViewerWidget.cpp", "Mu", null ],
 		[ "/home/morvux/cao/src/main.cpp", "Mu", null ]
 	],

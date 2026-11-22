@@ -63,6 +63,7 @@ bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
                  double deflexion = 0.1);
 bool importerSTEP(const std::string& chemin, TopoDS_Shape& forme);
 
+
 // Mesures d'une pièce, d'une face ou d'une arête, pour l'affichage des propriétés.
 struct Mesures
 {

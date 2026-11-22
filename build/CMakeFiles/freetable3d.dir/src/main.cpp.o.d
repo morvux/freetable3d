@@ -401,7 +401,7 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o: /home/morvux/cao/src/main.cpp \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qicon.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
- /home/morvux/cao/src/MainWindow.h \
+ /home/morvux/cao/src/Traduction.h /home/morvux/cao/src/MainWindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \

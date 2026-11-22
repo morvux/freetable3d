@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include <QAction>
+#include <QCoreApplication>
 #include <QActionGroup>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <memory>
@@ -38,13 +39,14 @@
 #include "Icones.h"
 #include "DialogueTransformation.h"
 #include "Modelisation.h"
+#include "Traduction.h"
 #include "PanneauProprietes.h"
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
     setWindowTitle("FreeTable3D");
-    resize(1100, 700);
+    resize(1315, 920);
 
     m_vue = new ViewerWidget;
     setCentralWidget(m_vue);
@@ -52,6 +54,22 @@ MainWindow::MainWindow(QWidget* parent)
     creerPanneauPieces();
     creerPanneaux();
     creerMenus();
+
+    // Largeur des panneaux à l'ouverture : liste des pièces 150 px à gauche, propriétés
+    // 370 px à droite ; la vue 3D prend le reste de la fenêtre.
+    {
+        QDockWidget* gauche = nullptr;
+        QDockWidget* droite = nullptr;
+        for (QDockWidget* dock : findChildren<QDockWidget*>())
+        {
+            if (dockWidgetArea(dock) == Qt::LeftDockWidgetArea)
+                gauche = dock;
+            else if (dockWidgetArea(dock) == Qt::RightDockWidgetArea)
+                droite = dock;
+        }
+        if (gauche && droite)
+            resizeDocks({gauche, droite}, {150, 370}, Qt::Horizontal);
+    }
 
     connect(m_vue, &ViewerWidget::selectionChangee, this, &MainWindow::surSelectionChangee);
 
@@ -299,6 +317,32 @@ void MainWindow::creerMenus()
 
     // --- Aide ---
     QMenu* menuAide = menuBar()->addMenu(tr("&Aide"));
+    // Langue de l'interface (prise en compte au prochain démarrage)
+    QMenu* menuLangue = menuAide->addMenu(QStringLiteral("&Langue / Language"));
+    auto* groupeLangue = new QActionGroup(this);
+    groupeLangue->setExclusive(true);
+    const QString langueActuelle = traduction::langueChoisie();
+    const struct
+    {
+        const char* nom;
+        const char* code;
+    } langues[] = {{"Français", "fr"}, {"English", "en"}};
+    for (const auto& l : langues)
+    {
+        QAction* a = menuLangue->addAction(QString::fromUtf8(l.nom));
+        a->setCheckable(true);
+        a->setChecked(langueActuelle == QLatin1String(l.code));
+        groupeLangue->addAction(a);
+        const QString code = QLatin1String(l.code);
+        connect(a, &QAction::triggered, this, [this, code]() {
+            traduction::enregistrerLangue(code);
+            QMessageBox::information(
+                this, QStringLiteral("FreeTable3D"),
+                QStringLiteral("Redémarrez FreeTable3D pour appliquer la langue.\n"
+                               "Restart FreeTable3D to apply the language."));
+        });
+    }
+    menuAide->addSeparator();
     action(menuAide, tr("À &propos de FreeTable3D…"), QKeySequence(),
            [this]() { aPropos(); });
 
@@ -1013,7 +1057,7 @@ void MainWindow::percerTrou()
                                         decalU->value(), decalV->value(), resultat, &raison))
     {
         QMessageBox::warning(this, tr("Percer un trou"),
-                             tr("Le perçage a échoué : %1.").arg(QString::fromStdString(raison)));
+                             tr("Le perçage a échoué : %1.").arg(QCoreApplication::translate("Modelisation", raison.c_str())));
         return;
     }
 
