@@ -307,7 +307,7 @@
 	"MOC_COMPILATION_FILE" : "/home/morvux/cao/build/freetable3d_autogen/mocs_compilation.cpp",
 	"MOC_DEFINITIONS" : 
 	[
-		"FREETABLE3D_VERSION=\"0.1.0\"",
+		"FREETABLE3D_VERSION=\"0.1.1\"",
 		"QT_CORE_LIB",
 		"QT_GUI_LIB",
 		"QT_NO_DEBUG",

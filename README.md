@@ -9,7 +9,7 @@ Dépôt : https://github.com/morvux/freetable3d
 Téléchargez le paquet `.deb` depuis la page des
 [versions](https://github.com/morvux/freetable3d/releases), puis :
 
-    sudo apt install ./freetable3d_0.1.0_amd64.deb
+    sudo apt install ./freetable3d_0.1.1_amd64.deb
 
 ## Compilation (Debian / MX Linux)
 
