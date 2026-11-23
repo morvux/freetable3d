@@ -53,6 +53,15 @@
 #include "Traduction.h"
 #include "PanneauProprietes.h"
 
+// Dossier « Documents » de l'utilisateur (Windows comme Linux), à défaut son dossier personnel.
+static QString dossierDocuments()
+{
+    QString dossier = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    if (dossier.isEmpty())
+        dossier = QDir::homePath();
+    return dossier;
+}
+
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -1856,7 +1865,7 @@ void MainWindow::ouvrirProjet()
         return;
 
     const QString chemin = QFileDialog::getOpenFileName(
-        this, tr("Ouvrir un projet"), QString(), tr("Projets FreeTable3D (*.ft3d *.cao)"));
+        this, tr("Ouvrir un projet"), dossierDocuments(), tr("Projets FreeTable3D (*.ft3d *.cao)"));
     if (chemin.isEmpty())
         return;
 
@@ -1901,7 +1910,8 @@ bool MainWindow::enregistrerProjet()
 bool MainWindow::enregistrerProjetSous()
 {
     QString chemin = QFileDialog::getSaveFileName(
-        this, tr("Enregistrer le projet"), m_chemin.isEmpty() ? QStringLiteral("projet.ft3d") : m_chemin,
+        this, tr("Enregistrer le projet"),
+        m_chemin.isEmpty() ? QDir(dossierDocuments()).filePath(QStringLiteral("projet.ft3d")) : m_chemin,
         tr("Projets FreeTable3D (*.ft3d)"));
     if (chemin.isEmpty())
         return false;
@@ -1915,7 +1925,7 @@ bool MainWindow::enregistrerProjetSous()
 void MainWindow::importerSTEP()
 {
     const QString chemin = QFileDialog::getOpenFileName(
-        this, tr("Importer un fichier STEP"), QString(),
+        this, tr("Importer un fichier STEP"), dossierDocuments(),
         tr("Fichiers STEP (*.step *.stp *.STEP *.STP)"));
     if (chemin.isEmpty())
         return;
@@ -1960,7 +1970,8 @@ void MainWindow::exporterSTEP()
     }
 
     QString chemin = QFileDialog::getSaveFileName(
-        this, tr("Exporter en STEP"), "piece.step", tr("Fichiers STEP (*.step *.stp)"));
+        this, tr("Exporter en STEP"), QDir(dossierDocuments()).filePath(QStringLiteral("piece.step")),
+        tr("Fichiers STEP (*.step *.stp)"));
     if (chemin.isEmpty())
         return;
     if (!chemin.endsWith(".step", Qt::CaseInsensitive) && !chemin.endsWith(".stp", Qt::CaseInsensitive))
@@ -2035,7 +2046,8 @@ void MainWindow::exporterSTL()
     QSettings("FreeTable3D", "FreeTable3D").setValue("export/finesse", qualite->currentIndex());
 
     QString chemin = QFileDialog::getSaveFileName(
-        this, tr("Exporter en STL"), "piece.stl", tr("Fichiers STL (*.stl)"));
+        this, tr("Exporter en STL"), QDir(dossierDocuments()).filePath(QStringLiteral("piece.stl")),
+        tr("Fichiers STL (*.stl)"));
     if (chemin.isEmpty())
         return;
     if (!chemin.endsWith(".stl", Qt::CaseInsensitive))
