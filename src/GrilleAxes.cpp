@@ -6,6 +6,11 @@
 #include <Graphic3d_ArrayOfSegments.hxx>
 #include <Graphic3d_AspectLine3d.hxx>
 #include <Graphic3d_Group.hxx>
+#include <Prs3d_Text.hxx>
+#include <Prs3d_TextAspect.hxx>
+#include <TCollection_ExtendedString.hxx>
+#include <Graphic3d_HorizontalTextAlignment.hxx>
+#include <Graphic3d_VerticalTextAlignment.hxx>
 #include <Quantity_Color.hxx>
 #include <gp_Pnt.hxx>
 
@@ -66,6 +71,35 @@ void ajouterAxe(const Handle(Prs3d_Presentation)& presentation,
     ajouterGroupe(presentation, segment, couleur, 2.0);
 }
 
+// Graduations : valeur en mm tous les « pas » le long des axes X et Y (texte de taille fixe à l'écran).
+void ajouterGraduations(const Handle(Prs3d_Presentation)& presentation, int demiTaille, int pas)
+{
+    if (pas <= 0)
+        return;
+
+    auto etiquettes = [&](const Quantity_Color& couleur, bool surX) {
+        Handle(Prs3d_TextAspect) aspect = new Prs3d_TextAspect();
+        aspect->SetColor(couleur);
+        aspect->SetHeight(12.0);
+        aspect->SetHorizontalJustification(Graphic3d_HTA_CENTER);
+        aspect->SetVerticalJustification(Graphic3d_VTA_CENTER);
+
+        Handle(Graphic3d_Group) groupe = presentation->NewGroup();
+        groupe->SetGroupPrimitivesAspect(aspect->Aspect());
+        for (int p = -demiTaille; p <= demiTaille; p += pas)
+        {
+            if (p == 0)
+                continue;
+            const TCollection_ExtendedString texte(p);
+            // Les nombres sont décalés de l'axe pour ne pas le recouvrir
+            const gp_Pnt position = surX ? gp_Pnt(p, -3.5, 0.0) : gp_Pnt(-4.5, p, 0.0);
+            Prs3d_Text::Draw(groupe, aspect, texte, position);
+        }
+    };
+    etiquettes(Quantity_Color(0.95, 0.55, 0.55, Quantity_TOC_RGB), true);
+    etiquettes(Quantity_Color(0.55, 0.90, 0.55, Quantity_TOC_RGB), false);
+}
+
 } // namespace
 
 GrilleAxes::GrilleAxes(int demiTaille, int pasMineur, int pasMajeur)
@@ -88,6 +122,9 @@ void GrilleAxes::Compute(const Handle(PrsMgr_PresentationManager)&,
     ajouterGroupe(presentation,
                   lignesQuadrillage(m_demiTaille, m_pasMajeur, 0),
                   Quantity_Color(0.36, 0.40, 0.46, Quantity_TOC_RGB), 1.0);
+
+    // Graduations numérotées (mm) le long des axes X et Y
+    ajouterGraduations(presentation, m_demiTaille, m_pasMajeur);
 
     // Axes : X rouge, Y vert, Z bleu
     const double d = m_demiTaille;
