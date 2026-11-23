@@ -80,6 +80,8 @@ install(TARGETS freetable3d RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES packaging/freetable3d.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES packaging/freetable3d.svg
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+install(FILES packaging/io.github.morvux.freetable3d.metainfo.xml
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/metainfo)
 install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR} RENAME copyright)
 
 set(CPACK_GENERATOR "DEB")
@@ -91,6 +93,8 @@ set(CPACK_PACKAGE_DESCRIPTION
     "FreeTable3D : modélisation 3D simple pour l'impression 3D, écrit en C++ avec OpenCascade et Qt 6.")
 set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
 set(CPACK_DEBIAN_PACKAGE_SECTION "graphics")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/morvux/freetable3d")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Olivier KREUDER <okpcbrumath@orange.fr>")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)   # dépendances déduites automatiquement
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)  # freetable3d_0.1.0_amd64.deb
 include(CPack)
