@@ -677,6 +677,43 @@ TopoDS_Shape redimensionnerBrut(const TopoDS_Shape& forme, double nx, double ny,
     if (planes && std::abs(proprietes.Mass() - dx * dy * dz) < 1e-6 * dx * dy * dz)
         return BRepPrimAPI_MakeBox(gp_Pnt(x0, y0, z0), nx, ny, nz).Shape();
 
+    // Cylindre vertical (1 face cylindrique + 2 faces planes) : on le reconstruit au lieu de le
+    // déformer (une déformation non uniforme le transformerait en surfaces B-spline fragiles).
+    {
+        int    nbCylindres = 0, nbPlans = 0, nbAutres = 0;
+        bool   vertical = true;
+        double rayon = 0.0;
+        gp_Pnt centre;
+        for (TopExp_Explorer ex(forme, TopAbs_FACE); ex.More(); ex.Next())
+        {
+            BRepAdaptor_Surface surface(TopoDS::Face(ex.Current()));
+            if (surface.GetType() == GeomAbs_Cylinder)
+            {
+                ++nbCylindres;
+                const gp_Cylinder cylindre = surface.Cylinder();
+                if (!cylindre.Axis().Direction().IsParallel(gp_Dir(0.0, 0.0, 1.0), 1e-9))
+                    vertical = false;
+                rayon  = cylindre.Radius();
+                centre = cylindre.Axis().Location();
+            }
+            else if (surface.GetType() == GeomAbs_Plane)
+                ++nbPlans;
+            else
+                ++nbAutres;
+        }
+        if (nbCylindres == 1 && nbPlans == 2 && nbAutres == 0 && vertical && rayon > 1e-9)
+        {
+            // Le diamètre est celui des champs X/Y qui a été modifié (les champs ont 2 décimales)
+            double diametre = 2.0 * rayon;
+            if (std::abs(nx - diametre) > 0.006)
+                diametre = nx;
+            else if (std::abs(ny - diametre) > 0.006)
+                diametre = ny;
+            const gp_Ax2 axe(gp_Pnt(centre.X(), centre.Y(), z0), gp_Dir(0.0, 0.0, 1.0));
+            return BRepPrimAPI_MakeCylinder(axe, diametre / 2.0, nz).Shape();
+        }
+    }
+
     // Sinon : étirement différent selon les axes, coin bas fixe
     const double sx = nx / dx, sy = ny / dy, sz = nz / dz;
     if (std::abs(sx - sy) < 1e-9 && std::abs(sy - sz) < 1e-9)
