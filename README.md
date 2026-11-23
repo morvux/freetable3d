@@ -12,14 +12,14 @@ Téléchargez le fichier correspondant à votre système depuis la page des
 **Linux** : un paquet `.deb` par distribution (un `.deb` ne s'installe que sur la version de Debian
 pour laquelle il a été construit) :
 
-- `freetable3d_0.1.2_debian12_amd64.deb` : Debian 12 / MX Linux 23
-- `freetable3d_0.1.2_debian13_amd64.deb` : Debian 13
+- `freetable3d_0.1.3_debian12_amd64.deb` : Debian 12 / MX Linux 23
+- `freetable3d_0.1.3_debian13_amd64.deb` : Debian 13
 
 Puis, par exemple :
 
-    sudo apt install ./freetable3d_0.1.2_debian12_amd64.deb
+    sudo apt install ./freetable3d_0.1.3_debian12_amd64.deb
 
-**Windows 11** : `FreeTable3D-0.1.2-windows-setup.exe`. Windows peut afficher un avertissement
+**Windows 11** : `FreeTable3D-0.1.3-windows-setup.exe`. Windows peut afficher un avertissement
 (SmartScreen), car l'installateur n'est pas signé : « Informations complémentaires » puis « Exécuter quand même ».
 
 ## Compilation (Debian / MX Linux)
