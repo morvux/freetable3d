@@ -1023,8 +1023,15 @@ bool ViewerWidget::pointSurEsquisse(const QPoint& ecran, gp_Pnt2d& uv) const
                       origine.Z() + t * direction.Z());
     const gp_Vec  w(m_repere.Location(), sur);
 
-    uv = gp_Pnt2d(aimanter(w.Dot(gp_Vec(m_repere.XDirection()))),
-                  aimanter(w.Dot(gp_Vec(m_repere.YDirection()))));
+    // En esquisse, la position se règle toujours au dixième de mm (sauf mode « Libre »)
+    auto aimanterEsquisse = [this](double valeur) {
+        if (m_pasAimantation <= 0.0)
+            return valeur;
+        const double pas = std::min(m_pasAimantation, 0.1);
+        return std::round(valeur / pas) * pas;
+    };
+    uv = gp_Pnt2d(aimanterEsquisse(w.Dot(gp_Vec(m_repere.XDirection()))),
+                  aimanterEsquisse(w.Dot(gp_Vec(m_repere.YDirection()))));
     return true;
 }
 
