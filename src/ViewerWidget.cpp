@@ -4,11 +4,14 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <cstdio>
+#include <string>
 #include <cmath>
 #include <cstddef>
 
 #include <QCursor>
 #include <QEvent>
+#include <QInputDialog>
 #include <QLocale>
 #include <QRegularExpression>
 #include <QMouseEvent>
@@ -775,6 +778,7 @@ void ViewerWidget::showEvent(QShowEvent*)
 
 void ViewerWidget::mousePressEvent(QMouseEvent* evenement)
 {
+    m_ignorerRelache = false;
     m_dernierePosition = versPixels(evenement->position());
     m_positionPression = m_dernierePosition;
     m_gesteDemarre = false;
@@ -880,6 +884,14 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
     if (evenement->button() != Qt::LeftButton)
         return;
 
+    // Relâchement qui suit le double-clic sur une cote : pas de nouveau point
+    if (m_ignorerRelache)
+    {
+        m_ignorerRelache = false;
+        m_geste          = Geste::Aucun;
+        return;
+    }
+
     // Fin d'un déplacement ou d'un étirement
     if (m_gesteDemarre)
     {
@@ -964,6 +976,11 @@ void ViewerWidget::arreterEsquisse()
 {
     masquerBulle();
     effacerApercu();
+    if (!m_objetCotes.IsNull())
+    {
+        m_contexte->Remove(m_objetCotes, false);
+        m_objetCotes.Nullify();
+    }
     if (!m_objetProfils.IsNull())
     {
         m_contexte->Remove(m_objetProfils, false);
@@ -1298,7 +1315,301 @@ void ViewerWidget::mettreAJourAffichageEsquisse()
             new Prs3d_LineAspect(Quantity_Color(0.2, 0.8, 1.0, Quantity_TOC_RGB), Aspect_TOL_SOLID, 2.5));
         m_contexte->Display(m_objetProfils, AIS_Shaded, -1, false);
     }
+    mettreAJourCotes();
     m_contexte->UpdateCurrentViewer();
+}
+
+namespace
+{
+std::string valeurCote(double v, const char* prefixe = "")
+{
+    char tampon[64];
+    std::snprintf(tampon, sizeof(tampon), "%s%.2f", prefixe, v);
+    return tampon;
+}
+} // namespace
+
+TopoDS_Shape ViewerWidget::faceDepuisProfil(const Profil& profil) const
+{
+    try
+    {
+        const std::vector<double>& v = profil.v;
+        TopoDS_Wire                contour;
+        switch (profil.type)
+        {
+        case TypeProfil::Rectangle:
+        {
+            if (v.size() < 4)
+                return TopoDS_Shape();
+            BRepBuilderAPI_MakePolygon polygone(point3D(gp_Pnt2d(v[0], v[1])),
+                                                point3D(gp_Pnt2d(v[0] + v[2], v[1])),
+                                                point3D(gp_Pnt2d(v[0] + v[2], v[1] + v[3])),
+                                                point3D(gp_Pnt2d(v[0], v[1] + v[3])), true);
+            if (!polygone.IsDone())
+                return TopoDS_Shape();
+            contour = polygone.Wire();
+            break;
+        }
+        case TypeProfil::Cercle:
+        {
+            if (v.size() < 3 || v[2] < 1e-6)
+                return TopoDS_Shape();
+            const gp_Circ cercle(gp_Ax2(point3D(gp_Pnt2d(v[0], v[1])), m_repere.Direction(), m_repere.XDirection()), v[2]);
+            BRepBuilderAPI_MakeEdge arete(cercle);
+            if (!arete.IsDone())
+                return TopoDS_Shape();
+            BRepBuilderAPI_MakeWire fil(arete.Edge());
+            if (!fil.IsDone())
+                return TopoDS_Shape();
+            contour = fil.Wire();
+            break;
+        }
+        case TypeProfil::Polygone:
+        {
+            if (v.size() < 6)
+                return TopoDS_Shape();
+            BRepBuilderAPI_MakePolygon polygone;
+            for (size_t i = 0; i + 1 < v.size(); i += 2)
+                polygone.Add(point3D(gp_Pnt2d(v[i], v[i + 1])));
+            polygone.Close();
+            if (!polygone.IsDone())
+                return TopoDS_Shape();
+            contour = polygone.Wire();
+            break;
+        }
+        }
+        BRepBuilderAPI_MakeFace face(contour, true);
+        return face.IsDone() ? TopoDS_Shape(face.Face()) : TopoDS_Shape();
+    }
+    catch (const Standard_Failure&)
+    {
+        return TopoDS_Shape();
+    }
+}
+
+bool ViewerWidget::modifierCote(const InfoCote& info, double valeur)
+{
+    if (info.profil < 0 || info.profil >= static_cast<int>(m_descriptions.size()) || valeur < 0.01)
+        return false;
+
+    Profil nouveau = m_descriptions[static_cast<size_t>(info.profil)];
+    std::vector<double>& v = nouveau.v;
+    switch (info.genre)
+    {
+    case 0: v[2] = valeur; break;       // largeur du rectangle
+    case 1: v[3] = valeur; break;       // hauteur du rectangle
+    case 2: v[2] = valeur / 2.0; break; // diamètre du cercle -> rayon
+    case 3:                             // côté d'un polygone : on déplace son sommet d'arrivée
+    {
+        const size_t n = v.size() / 2;
+        const size_t i = static_cast<size_t>(info.indice);
+        const size_t j = (i + 1) % n;
+        const double dx = v[2 * j] - v[2 * i];
+        const double dy = v[2 * j + 1] - v[2 * i + 1];
+        const double l  = std::hypot(dx, dy);
+        if (l < 1e-9)
+            return false;
+        v[2 * j]     = v[2 * i] + dx / l * valeur;
+        v[2 * j + 1] = v[2 * i + 1] + dy / l * valeur;
+        break;
+    }
+    default: return false;
+    }
+
+    const TopoDS_Shape face = faceDepuisProfil(nouveau);
+    if (face.IsNull())
+        return false;
+    m_descriptions[static_cast<size_t>(info.profil)] = nouveau;
+    m_profils[static_cast<size_t>(info.profil)]      = face;
+    mettreAJourAffichageEsquisse();
+    return true;
+}
+
+void ViewerWidget::mouseDoubleClickEvent(QMouseEvent* evenement)
+{
+    // En esquisse, un double-clic sur une cote permet de changer sa valeur
+    if (m_esquisseActive && evenement->button() == Qt::LeftButton)
+    {
+        const QPoint position = versPixels(evenement->position());
+        int          meilleur = -1;
+        double       distance = 1e9;
+        auto versEcran = [this](const gp_Pnt& p) {
+            Standard_Integer px = 0, py = 0;
+            m_vue->Convert(p.X(), p.Y(), p.Z(), px, py);
+            return QPointF(px, py);
+        };
+        for (size_t i = 0; i < m_infosCotes.size(); ++i)
+        {
+            // Proximité du nombre (40 px) ou du trait de cote (12 px) : on garde le plus proche
+            const QPointF texte = versEcran(m_infosCotes[i].position);
+            double        d     = std::hypot(texte.x() - position.x(), texte.y() - position.y());
+            if (d > 40.0)
+                d = 1e9;
+
+            const QPointF a  = versEcran(m_infosCotes[i].debut);
+            const QPointF b  = versEcran(m_infosCotes[i].fin);
+            const QPointF ab = b - a;
+            const double  l2 = ab.x() * ab.x() + ab.y() * ab.y();
+            double        t  = l2 > 1e-9 ? ((position.x() - a.x()) * ab.x() + (position.y() - a.y()) * ab.y()) / l2 : 0.0;
+            t                = std::max(0.0, std::min(1.0, t));
+            const double dSegment = std::hypot(a.x() + t * ab.x() - position.x(), a.y() + t * ab.y() - position.y());
+            if (dSegment <= 12.0)
+                d = std::min(d, dSegment);
+
+            if (d < distance)
+            {
+                distance = d;
+                meilleur = static_cast<int>(i);
+            }
+        }
+        if (distance > 1e8)
+            meilleur = -1;
+
+        if (meilleur >= 0)
+        {
+            // Le premier clic du double-clic a pu poser un point : on l'annule
+            m_pointsEnCours.clear();
+            m_saisie.clear();
+            effacerApercu();
+            masquerBulle();
+            m_contexte->UpdateCurrentViewer();
+            m_ignorerRelache = true;
+
+            const InfoCote info   = m_infosCotes[static_cast<size_t>(meilleur)];
+            bool           ok     = false;
+            const double   valeur = QInputDialog::getDouble(this, QObject::tr("Modifier la cote"),
+                                                            QObject::tr("Nouvelle valeur (mm) :"), info.valeur,
+                                                            0.01, 100000.0, 2, &ok);
+            if (ok && !modifierCote(info, valeur))
+                emit messageApercu(QObject::tr("Cette valeur est impossible pour ce profil."));
+            return;
+        }
+    }
+    if (m_esquisseActive && evenement->button() == Qt::LeftButton)
+        emit messageApercu(QObject::tr("Aucune cote à cet endroit : double-cliquez sur le nombre d'une cote (%1 cote(s) affichée(s)).")
+                               .arg(static_cast<int>(m_infosCotes.size())));
+    QWidget::mouseDoubleClickEvent(evenement);
+}
+
+void ViewerWidget::mettreAJourCotes()
+{
+    if (!m_objetCotes.IsNull())
+    {
+        m_contexte->Remove(m_objetCotes, false);
+        m_objetCotes.Nullify();
+    }
+
+    const gp_Vec axeU(m_repere.XDirection());
+    const gp_Vec axeV(m_repere.YDirection());
+    auto clamp = [](double valeur, double mini, double maxi) { return std::max(mini, std::min(maxi, valeur)); };
+
+    m_infosCotes.clear();
+    std::vector<Cote> cotes;
+    size_t            numeroProfil = 0;
+    auto ajouter = [&](const Cote& cote, int genre, int indice, double valeur) {
+        cotes.push_back(cote);
+        InfoCote info;
+        info.profil   = static_cast<int>(numeroProfil);
+        info.genre    = genre;
+        info.indice   = indice;
+        info.valeur   = valeur;
+        info.position = gp_Pnt((cote.a.X() + cote.b.X()) / 2.0 + cote.decalage.X() + cote.decalageTexte.X(),
+                               (cote.a.Y() + cote.b.Y()) / 2.0 + cote.decalage.Y() + cote.decalageTexte.Y(),
+                               (cote.a.Z() + cote.b.Z()) / 2.0 + cote.decalage.Z() + cote.decalageTexte.Z());
+        info.debut = cote.a.Translated(cote.decalage);
+        info.fin   = cote.b.Translated(cote.decalage);
+        m_infosCotes.push_back(info);
+    };
+    for (size_t ip = 0; ip < m_descriptions.size(); ++ip, numeroProfil = ip)
+    {
+        const Profil& profil = m_descriptions[ip];
+        const std::vector<double>& v = profil.v;
+        switch (profil.type)
+        {
+        case TypeProfil::Rectangle:
+        {
+            if (v.size() < 4)
+                break;
+            const double u0 = v[0], v0 = v[1], largeur = v[2], hauteur = v[3];
+            const double ecart = clamp(0.12 * std::min(std::abs(largeur), std::abs(hauteur)), 1.5, 8.0);
+
+            Cote bas;
+            bas.a        = point3D(gp_Pnt2d(u0, v0));
+            bas.b        = point3D(gp_Pnt2d(u0 + largeur, v0));
+            bas.decalage = axeV * (hauteur >= 0.0 ? -ecart : ecart);
+            bas.texte    = valeurCote(std::abs(largeur));
+            ajouter(bas, 0, 0, std::abs(largeur));
+
+            Cote cote;
+            cote.a        = point3D(gp_Pnt2d(u0 + largeur, v0));
+            cote.b        = point3D(gp_Pnt2d(u0 + largeur, v0 + hauteur));
+            cote.decalage = axeU * (largeur >= 0.0 ? ecart : -ecart);
+            cote.texte    = valeurCote(std::abs(hauteur));
+            ajouter(cote, 1, 0, std::abs(hauteur));
+            break;
+        }
+        case TypeProfil::Cercle:
+        {
+            if (v.size() < 3)
+                break;
+            Cote diametre;
+            diametre.a             = point3D(gp_Pnt2d(v[0] - v[2], v[1]));
+            diametre.b             = point3D(gp_Pnt2d(v[0] + v[2], v[1]));
+            diametre.attaches      = false;
+            diametre.decalageTexte = axeV * clamp(0.25 * v[2], 1.5, 6.0);
+            diametre.texte         = valeurCote(2.0 * v[2], "Ø ");
+            ajouter(diametre, 2, 0, 2.0 * v[2]);
+            break;
+        }
+        case TypeProfil::Polygone:
+        {
+            const size_t n = v.size() / 2;
+            if (n < 3)
+                break;
+            double cu = 0.0, cv = 0.0;
+            for (size_t i = 0; i < n; ++i)
+            {
+                cu += v[2 * i];
+                cv += v[2 * i + 1];
+            }
+            cu /= static_cast<double>(n);
+            cv /= static_cast<double>(n);
+
+            for (size_t i = 0; i < n; ++i)
+            {
+                const size_t j = (i + 1) % n;
+                const gp_Pnt2d p(v[2 * i], v[2 * i + 1]);
+                const gp_Pnt2d q(v[2 * j], v[2 * j + 1]);
+                const double   longueur = p.Distance(q);
+                if (longueur < 1e-6)
+                    continue;
+
+                // Normale du côté, tournée vers l'extérieur du polygone
+                double nu = -(q.Y() - p.Y()) / longueur;
+                double nv = (q.X() - p.X()) / longueur;
+                if (nu * ((p.X() + q.X()) / 2.0 - cu) + nv * ((p.Y() + q.Y()) / 2.0 - cv) < 0.0)
+                {
+                    nu = -nu;
+                    nv = -nv;
+                }
+                const double ecart = clamp(0.12 * longueur, 1.5, 8.0);
+
+                Cote cote;
+                cote.a        = point3D(p);
+                cote.b        = point3D(q);
+                cote.decalage = (axeU * nu + axeV * nv) * ecart;
+                cote.texte    = valeurCote(longueur);
+                ajouter(cote, 3, static_cast<int>(i), longueur);
+            }
+            break;
+        }
+        }
+    }
+
+    if (cotes.empty())
+        return;
+    m_objetCotes = new CotesEsquisse(cotes);
+    m_contexte->Display(m_objetCotes, 0, -1, false);
 }
 
 namespace

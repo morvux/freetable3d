@@ -33,6 +33,7 @@
 
 #include "Document.h"
 #include "Esquisse.h"
+#include "CotesEsquisse.h"
 #include "GrilleAxes.h"
 
 // Ce que le clic sélectionne : la pièce entière, une de ses faces ou une de ses arêtes.
@@ -157,6 +158,7 @@ protected:
     void mousePressEvent(QMouseEvent* evenement) override;
     void mouseMoveEvent(QMouseEvent* evenement) override;
     void mouseReleaseEvent(QMouseEvent* evenement) override;
+    void mouseDoubleClickEvent(QMouseEvent* evenement) override;
     void wheelEvent(QWheelEvent* evenement) override;
     void keyPressEvent(QKeyEvent* evenement) override;
     bool event(QEvent* evenement) override;
@@ -225,6 +227,19 @@ private:
     void ajouterProfil(const TopoDS_Wire& contour, const Profil& description);
     void fermerPolygone();
     void mettreAJourAffichageEsquisse();
+    void mettreAJourCotes();
+    struct InfoCote
+    {
+        int    profil = 0;  // numéro du profil
+        int    genre  = 0;  // 0 largeur, 1 hauteur (rectangle) ; 2 diamètre ; 3 côté de polygone
+        int    indice = 0;  // numéro du côté (polygone)
+        double valeur = 0.0;
+        gp_Pnt position;    // emplacement du texte de la cote
+        gp_Pnt debut;       // extrémités du trait de cote
+        gp_Pnt fin;
+    };
+    bool         modifierCote(const InfoCote& info, double valeur);
+    TopoDS_Shape faceDepuisProfil(const Profil& profil) const;
     void validerPointEsquisse(const gp_Pnt2d& uv);
     // Point défini par les cotes tapées au clavier (dans la direction de la souris).
     bool pointDepuisSaisie(gp_Pnt2d& uv) const;
@@ -283,6 +298,9 @@ private:
     std::vector<TopoDS_Shape> m_profils;
     std::vector<Profil>       m_descriptions; // même ordre que m_profils
     Handle(AIS_Shape)         m_objetProfils;
+    Handle(CotesEsquisse)     m_objetCotes;
+    std::vector<InfoCote>     m_infosCotes;
+    bool                      m_ignorerRelache = false;
     Handle(AIS_Shape)         m_objetApercu;
     QString                   m_saisie;     // cotes tapées au clavier
     gp_Pnt2d                  m_dernierUV;  // dernière position de la souris dans le plan

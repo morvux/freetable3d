@@ -61,6 +61,8 @@ add_executable(freetable3d
     src/Modelisation.cpp
     src/GrilleAxes.h
     src/GrilleAxes.cpp
+    src/CotesEsquisse.h
+    src/CotesEsquisse.cpp
     ressources.qrc)
 
 # Windows : application graphique, sans fenêtre de console noire.

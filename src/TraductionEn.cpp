@@ -627,6 +627,14 @@ const Entree kTableAnglais[] = {
      "STEP files (*.step *.stp)"},
     {"L'écriture du fichier STEP a échoué.",
      "Writing the STEP file failed."},
+    {"Modifier la cote",
+     "Edit dimension"},
+    {"Nouvelle valeur (mm) :",
+     "New value (mm):"},
+    {"Cette valeur est impossible pour ce profil.",
+     "This value is not possible for this profile."},
+    {"Aucune cote à cet endroit : double-cliquez sur le nombre d'une cote (%1 cote(s) affichée(s)).",
+     "No dimension here: double-click the number of a dimension (%1 shown)."},
 };
 const int kNombreAnglais = sizeof(kTableAnglais) / sizeof(kTableAnglais[0]);
 } // namespace traduction
