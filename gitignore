@@ -1,0 +1,8 @@
+build/
+*.stl
+*.user
+.cache/
+compile_commands.json
+dist/
+installateur/
+*.deb

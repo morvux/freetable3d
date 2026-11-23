@@ -4,12 +4,23 @@ Logiciel libre de CAO pour l'impression 3D, en C++ avec OpenCascade et Qt 6.
 
 Dépôt : https://github.com/morvux/freetable3d
 
-## Installation (Debian 12 / MX Linux 23)
+## Installation
 
-Téléchargez le paquet `.deb` depuis la page des
-[versions](https://github.com/morvux/freetable3d/releases), puis :
+Téléchargez le fichier correspondant à votre système depuis la page des
+[versions](https://github.com/morvux/freetable3d/releases).
 
-    sudo apt install ./freetable3d_0.1.1_amd64.deb
+**Linux** : un paquet `.deb` par distribution (un `.deb` ne s'installe que sur la version de Debian
+pour laquelle il a été construit) :
+
+- `freetable3d_0.1.2_debian12_amd64.deb` : Debian 12 / MX Linux 23
+- `freetable3d_0.1.2_debian13_amd64.deb` : Debian 13
+
+Puis, par exemple :
+
+    sudo apt install ./freetable3d_0.1.2_debian12_amd64.deb
+
+**Windows 11** : `FreeTable3D-0.1.2-windows-setup.exe`. Windows peut afficher un avertissement
+(SmartScreen), car l'installateur n'est pas signé : « Informations complémentaires » puis « Exécuter quand même ».
 
 ## Compilation (Debian / MX Linux)
 
