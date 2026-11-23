@@ -44,7 +44,9 @@
 #include <IFSelect_ReturnStatus.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <STEPControl_Reader.hxx>
+#include <STEPControl_Writer.hxx>
 #include <StlAPI_Writer.hxx>
+
 #include <TopAbs_Orientation.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
@@ -540,6 +542,33 @@ bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
 
     StlAPI_Writer ecrivain;
     return ecrivain.Write(forme, chemin.c_str());
+}
+
+bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& chemin)
+{
+    if (formes.empty())
+        return false;
+
+    try
+    {
+        STEPControl_Writer ecrivain;
+        int                nb = 0;
+        for (const TopoDS_Shape& forme : formes)
+        {
+            if (forme.IsNull())
+                continue;
+            if (ecrivain.Transfer(forme, STEPControl_AsIs) != IFSelect_RetDone)
+                return false;
+            ++nb;
+        }
+        if (nb == 0)
+            return false;
+        return ecrivain.Write(chemin.c_str()) == IFSelect_RetDone;
+    }
+    catch (const Standard_Failure&)
+    {
+        return false;
+    }
 }
 
 bool importerSTEP(const std::string& chemin, TopoDS_Shape& forme)

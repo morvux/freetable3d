@@ -34,6 +34,7 @@ private slots:
     bool enregistrerProjetSous();
     void importerSTEP();
     void exporterSTL();
+    void exporterSTEP();
     void creerCube();
     void creerCylindre();
     void creerSphere();

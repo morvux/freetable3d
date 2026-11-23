@@ -611,6 +611,22 @@ const Entree kTableAnglais[] = {
      "Dimensions"},
     {"Ces dimensions sont impossibles pour cette pièce (trop faibles ?). Elles n'ont pas été appliquées.",
      "These dimensions are not possible for this part (too small?). They were not applied."},
+    {"0,1 mm",
+     "0.1 mm"},
+    {"0,5 mm",
+     "0.5 mm"},
+    {"Exporter en ST&EP (autres logiciels de CAO)…",
+     "Export to ST&EP (other CAD software)…"},
+    {"Exporter en STEP",
+     "Export to STEP"},
+    {"Que faut-il exporter ?",
+     "What should be exported?"},
+    {"La sélection (%1)",
+     "The selection (%1)"},
+    {"Fichiers STEP (*.step *.stp)",
+     "STEP files (*.step *.stp)"},
+    {"L'écriture du fichier STEP a échoué.",
+     "Writing the STEP file failed."},
 };
 const int kNombreAnglais = sizeof(kTableAnglais) / sizeof(kTableAnglais[0]);
 } // namespace traduction

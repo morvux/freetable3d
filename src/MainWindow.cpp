@@ -11,6 +11,7 @@
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QLabel>
+#include <QApplication>
 #include <QLocale>
 #include <QDoubleSpinBox>
 #include <QSettings>
@@ -31,6 +32,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QStatusBar>
 #include <QCursor>
 #include <QToolBar>
@@ -206,6 +208,8 @@ void MainWindow::creerMenus()
            [this]() { importerSTEP(); });
     action(menuFichier, tr("&Exporter en STL…"), QKeySequence("Ctrl+E"),
            [this]() { exporterSTL(); });
+    action(menuFichier, tr("Exporter en ST&EP (autres logiciels de CAO)…"), QKeySequence(),
+           [this]() { exporterSTEP(); });
     menuFichier->addSeparator();
     action(menuFichier, tr("&Quitter"), QKeySequence("Ctrl+Q"),
            [this]() { close(); });
@@ -1920,6 +1924,57 @@ void MainWindow::importerSTEP()
         return;
     }
     ajouterPiece(forme, tr("Import"));
+}
+
+void MainWindow::exporterSTEP()
+{
+    if (m_document.vide())
+    {
+        QMessageBox::information(this, tr("Rien à exporter"),
+                                 tr("Le document est vide : créez ou importez une pièce d'abord."));
+        return;
+    }
+
+    // S'il y a une sélection, on demande s'il faut exporter tout ou seulement elle
+    const std::vector<int> idsSel = idsSelectionnes();
+    bool                   seulementSelection = false;
+    if (!idsSel.empty())
+    {
+        QMessageBox question(this);
+        question.setWindowTitle(tr("Exporter en STEP"));
+        question.setText(tr("Que faut-il exporter ?"));
+        QPushButton* boutonSelection = question.addButton(tr("La sélection (%1)").arg(static_cast<int>(idsSel.size())),
+                                                          QMessageBox::AcceptRole);
+        QPushButton* boutonTout = question.addButton(
+            tr("Toutes les pièces (%1)").arg(static_cast<int>(m_document.pieces().size())), QMessageBox::AcceptRole);
+        question.addButton(QMessageBox::Cancel);
+        question.exec();
+        if (question.clickedButton() == boutonSelection)
+            seulementSelection = true;
+        else if (question.clickedButton() != boutonTout)
+            return;
+    }
+
+    QString chemin = QFileDialog::getSaveFileName(
+        this, tr("Exporter en STEP"), "piece.step", tr("Fichiers STEP (*.step *.stp)"));
+    if (chemin.isEmpty())
+        return;
+    if (!chemin.endsWith(".step", Qt::CaseInsensitive) && !chemin.endsWith(".stp", Qt::CaseInsensitive))
+        chemin += ".step";
+
+    std::vector<TopoDS_Shape> formes;
+    for (const Piece& piece : m_document.pieces())
+    {
+        if (!seulementSelection || std::find(idsSel.begin(), idsSel.end(), piece.id) != idsSel.end())
+            formes.push_back(piece.forme);
+    }
+
+    if (!modelisation::exporterSTEP(formes, chemin.toStdString()))
+    {
+        QMessageBox::warning(this, tr("Export impossible"), tr("L'écriture du fichier STEP a échoué."));
+        return;
+    }
+    statusBar()->showMessage(tr("Exporté : %1 pièce(s) dans %2").arg(static_cast<int>(formes.size())).arg(chemin));
 }
 
 void MainWindow::exporterSTL()

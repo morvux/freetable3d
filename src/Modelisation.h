@@ -62,6 +62,9 @@ TopoDS_Shape assembler(const std::vector<TopoDS_Shape>& formes);
 bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
                  double deflexion = 0.1);
 bool importerSTEP(const std::string& chemin, TopoDS_Shape& forme);
+// Export STEP (format d'échange CAO lu par FreeCAD, etc.) ; chaque forme devient un objet distinct.
+bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& chemin);
+
 
 
 // Mesures d'une pièce, d'une face ou d'une arête, pour l'affichage des propriétés.
