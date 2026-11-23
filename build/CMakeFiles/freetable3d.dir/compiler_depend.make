@@ -5,6 +5,7 @@ freetable3d_autogen/timestamp: /home/morvux/cao/CMakeLists.txt \
   CMakeFiles/3.31.6/CMakeCXXCompiler.cmake \
   CMakeFiles/3.31.6/CMakeSystem.cmake \
   freetable3d_autogen/moc_predefs.h \
+  /home/morvux/cao/ressources.qrc \
   /home/morvux/cao/src/DialogueDimensions.cpp \
   /home/morvux/cao/src/DialogueDimensions.h \
   /home/morvux/cao/src/DialogueTransformation.cpp \
@@ -724,6 +725,7 @@ freetable3d_autogen/timestamp: /home/morvux/cao/CMakeLists.txt \
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
@@ -791,6 +793,7 @@ freetable3d_autogen/timestamp: /home/morvux/cao/CMakeLists.txt \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmalloc.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \
@@ -1078,6 +1081,9 @@ freetable3d_autogen/timestamp: /home/morvux/cao/CMakeLists.txt \
   /usr/share/cmake-3.31/Modules/Platform/Linux.cmake \
   /usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake \
   /usr/share/cmake-3.31/Templates/CPackConfig.cmake.in
+
+CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o: freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp \
+  /usr/include/stdc-predef.h
 
 CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o: freetable3d_autogen/mocs_compilation.cpp \
   /home/morvux/cao/src/DialogueDimensions.h \
@@ -1809,6 +1815,7 @@ CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o: freetable
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
@@ -1876,6 +1883,7 @@ CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o: freetable
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmalloc.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \
@@ -5275,17 +5283,23 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QCoreApplication \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QDateTime \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QDir \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QFileInfo \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QLocale \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSettings \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSize \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QSizeF \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QString \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QVector \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20functional.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/q20iterator.h \
@@ -5302,6 +5316,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qatomic_cxx11.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasicatomic.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearray.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qbytearrayalgorithms.h \
@@ -5355,6 +5370,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmalloc.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \
@@ -5387,6 +5403,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qsharedpointer_impl.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qsize.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qspan.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstandardpaths.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qstring.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringalgorithms.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringbuilder.h \
@@ -5411,6 +5428,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtdeprecationmarkers.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtenvironmentvariables.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtextstream.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimezone.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtmetamacros.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qtnoop.h \
@@ -5437,6 +5455,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QIcon \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QKeyEvent \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QKeySequence \
+  /usr/include/x86_64-linux-gnu/qt6/QtGui/QScreen \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qactiongroup.h \
@@ -5499,6 +5518,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMenuBar \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMessageBox \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QRadioButton \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QScrollArea \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QSpinBox \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStatusBar \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolBar \
@@ -5535,6 +5555,7 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: /home/morvux/cao/src/MainWindow
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmessagebox.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qradiobutton.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qrubberband.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qscrollarea.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qsizepolicy.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qslider.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qspinbox.h \
@@ -7239,6 +7260,7 @@ CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o: /home/morvux/cao/src/Pan
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qxptype_traits.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qyieldcpu.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QKeyEvent \
+  /usr/include/x86_64-linux-gnu/qt6/QtGui/QPixmap \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/QTransform \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qbitmap.h \
@@ -9926,6 +9948,7 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o: /home/morvux/cao/src/main.cpp \
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
@@ -9993,6 +10016,7 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o: /home/morvux/cao/src/main.cpp \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmalloc.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \
@@ -10239,6 +10263,7 @@ freetable3d: /lib/x86_64-linux-gnu/libEGL.so.1 \
   /usr/lib/x86_64-linux-gnu/libTKXSBase.so \
   /usr/lib/x86_64-linux-gnu/libTKernel.so \
   /usr/lib/x86_64-linux-gnu/libc_nonshared.a \
+  CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o \
   CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o \
   CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o \
   CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o \
@@ -10263,6 +10288,8 @@ CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o:
 CMakeFiles/freetable3d.dir/src/Document.cpp.o:
 
 CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o:
+
+CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o:
 
 /usr/lib/x86_64-linux-gnu/libTKernel.so:
 
@@ -10364,8 +10391,6 @@ CMakeFiles/freetable3d.dir/src/DialogueTransformation.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtGui/QMouseEvent:
 
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h:
-
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QRegularExpression:
 
 /usr/include/opencascade/Xw_Window.hxx:
@@ -10465,8 +10490,6 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QStyleFactory:
 
 /usr/include/opencascade/Standard_DivideByZero.hxx:
-
-/usr/include/opencascade/ShapeUpgrade_UnifySameDomain.hxx:
 
 /usr/include/opencascade/ShapeBuild_ReShape.hxx:
 
@@ -10766,6 +10789,8 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolBar:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QScrollArea:
+
 /usr/include/c++/14/set:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QRadioButton:
@@ -10806,6 +10831,8 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimezone.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qstandardpaths.h:
+
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qsettings.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qfileinfo.h:
@@ -10820,6 +10847,8 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h:
 
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h:
+
 /lib/x86_64-linux-gnu/libIex-3_1.so.30:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qabstractitemmodel.h:
@@ -10829,6 +10858,12 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QSettings:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QLocale:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QFile:
+
+/usr/include/opencascade/ShapeUpgrade_UnifySameDomain.hxx:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QDir:
 
 /lib/x86_64-linux-gnu/libpng16.so.16:
 
@@ -10987,6 +11022,20 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o:
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qdialogbuttonbox.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QFormLayout:
+
+/usr/include/opencascade/BRepOffset_DataMapOfShapeOffset.hxx:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialogButtonBox:
+
+/usr/include/x86_64-linux-gnu/qt6/QtGui/QCloseEvent:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/include/syslimits.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/include/stdint.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/14/include/limits.h:
 
 /usr/include/opencascade/Standard_PrimitiveTypes.hxx:
 
@@ -11266,6 +11315,8 @@ CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o:
 
 /usr/include/opencascade/Graphic3d_TypeOfShaderObject.hxx:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qscrollarea.h:
+
 /usr/lib/x86_64-linux-gnu/cmake/Qt6/QtPublicSbomCpeHelpers.cmake:
 
 /usr/include/opencascade/BRep_TFace.hxx:
@@ -11299,6 +11350,8 @@ CMakeFiles/freetable3d.dir/src/ViewerWidget.cpp.o:
 /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfigVersionImpl.cmake:
 
 /usr/include/opencascade/Select3D_SensitiveEntity.hxx:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths:
 
 /usr/lib/x86_64-linux-gnu/cmake/Qt6/FindWrapOpenGL.cmake:
 
@@ -11506,6 +11559,8 @@ CMakeFiles/freetable3d.dir/src/TraductionEn.cpp.o:
 
 /usr/lib/gcc/x86_64-linux-gnu/14/libgcc_s.so:
 
+/usr/include/x86_64-linux-gnu/qt6/QtGui/QScreen:
+
 /usr/include/c++/14/compare:
 
 /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h:
@@ -11549,6 +11604,16 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 /usr/include/opencascade/TopoDS_TCompSolid.lxx:
 
 /usr/include/c++/14/bits/unordered_map.h:
+
+/usr/include/opencascade/Aspect_FrustumLRBT.hxx:
+
+/usr/include/c++/14/bits/utility.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog:
+
+/usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake:
+
+/usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake:
 
 /usr/include/opencascade/Message_Level.hxx:
 
@@ -11598,6 +11663,8 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 
 /usr/include/c++/14/functional:
 
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QDateTime:
+
 /home/morvux/cao/src/DialogueTransformation.cpp:
 
 /usr/include/c++/14/bits/std_abs.h:
@@ -11619,6 +11686,8 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 /usr/include/opencascade/OSD_ThreadFunction.hxx:
 
 /usr/include/c++/14/bits/requires_hosted.h:
+
+/home/morvux/cao/ressources.qrc:
 
 /usr/include/c++/14/iostream:
 
@@ -11646,18 +11715,6 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qiodevice.h:
 
-/usr/include/c++/14/bits/locale_facets.h:
-
-/usr/include/opencascade/BVH_BinaryTree.hxx:
-
-/usr/include/c++/14/bits/stl_bvector.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qversionnumber.h:
-
-/usr/include/c++/14/bits/stl_iterator_base_types.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydataops.h:
-
 /usr/include/opencascade/Graphic3d_CLight.hxx:
 
 /usr/include/c++/14/bits/stl_uninitialized.h:
@@ -11681,8 +11738,6 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 /usr/include/opencascade/Graphic3d_TypeOfAnswer.hxx:
 
 /usr/include/opencascade/Graphic3d_Group.hxx:
-
-/usr/lib/gcc/x86_64-linux-gnu/14/include/limits.h:
 
 /usr/include/x86_64-linux-gnu/c++/14/bits/ctype_inline.h:
 
@@ -11790,9 +11845,25 @@ CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o:
 
 /usr/include/c++/14/typeindex:
 
+/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractspinbox.h:
+
+/usr/include/opencascade/Graphic3d_TypeOfTexture.hxx:
+
+/usr/include/opencascade/SelectMgr_SortCriterion.hxx:
+
 /usr/include/opencascade/Standard_HashUtils.lxx:
 
 /usr/include/opencascade/Graphic3d_ShaderObject.hxx:
+
+/usr/include/opencascade/BRepOffset_Status.hxx:
+
+/usr/include/opencascade/BRepBuilderAPI_GTransform.hxx:
+
+/usr/include/opencascade/Message_Messenger.hxx:
+
+/usr/include/c++/14/bits/cpp_type_traits.h:
+
+/usr/include/c++/14/cassert:
 
 /usr/include/opencascade/Graphic3d_GraduatedTrihedron.hxx:
 
@@ -11844,22 +11915,6 @@ freetable3d_autogen/UVLADIE3JM/moc_DialogueDimensions.cpp:
 
 /usr/lib/x86_64-linux-gnu/cmake/Qt6Widgets/Qt6WidgetsConfigVersionImpl.cmake:
 
-/usr/include/opencascade/BRepOffset_Status.hxx:
-
-/usr/include/opencascade/BRepBuilderAPI_GTransform.hxx:
-
-/usr/include/opencascade/Message_Messenger.hxx:
-
-/usr/include/c++/14/cassert:
-
-/usr/include/c++/14/bits/cpp_type_traits.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractspinbox.h:
-
-/usr/include/opencascade/Graphic3d_TypeOfTexture.hxx:
-
-/usr/include/opencascade/SelectMgr_SortCriterion.hxx:
-
 freetable3d_autogen/UVLADIE3JM/moc_PanneauProprietes.cpp:
 
 /usr/include/opencascade/Poly_Triangle.hxx:
@@ -11869,16 +11924,6 @@ freetable3d_autogen/UVLADIE3JM/moc_PanneauProprietes.cpp:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qdarwinhelpers.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qcontainerfwd.h:
-
-/usr/include/opencascade/Aspect_DisplayConnection.hxx:
-
-/usr/include/opencascade/GeomAbs_CurveType.hxx:
-
-/usr/include/opencascade/Aspect_TypeOfResize.hxx:
-
-/usr/include/opencascade/SelectMgr_SelectionType.hxx:
-
-/usr/include/c++/14/bits/basic_ios.h:
 
 /usr/include/c++/14/utility:
 
@@ -11987,6 +12032,28 @@ freetable3d_autogen/moc_predefs.h:
 /usr/include/c++/14/bits/memoryfwd.h:
 
 /home/morvux/cao/src/Esquisse.h:
+
+/usr/include/opencascade/Aspect_DisplayConnection.hxx:
+
+/usr/include/opencascade/GeomAbs_CurveType.hxx:
+
+/usr/include/opencascade/Aspect_TypeOfResize.hxx:
+
+/usr/include/c++/14/bits/basic_ios.h:
+
+/usr/include/opencascade/SelectMgr_SelectionType.hxx:
+
+/usr/include/c++/14/bits/locale_facets.h:
+
+/usr/include/opencascade/BVH_BinaryTree.hxx:
+
+/usr/include/c++/14/bits/stl_bvector.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qversionnumber.h:
+
+/usr/include/c++/14/bits/stl_iterator_base_types.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qarraydataops.h:
 
 /usr/include/opencascade/ChFiDS_Map.hxx:
 
@@ -12108,36 +12175,6 @@ freetable3d_autogen/moc_predefs.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qassert.h:
 
-/usr/include/opencascade/Graphic3d_PresentationAttributes.hxx:
-
-/usr/include/c++/14/bits/char_traits.h:
-
-/usr/include/opencascade/TopLoc_ItemLocation.hxx:
-
-/usr/include/opencascade/TopoDS_Vertex.hxx:
-
-/usr/include/opencascade/NCollection_Array2.hxx:
-
-/usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake:
-
-/usr/include/opencascade/Graphic3d_TextureMap.hxx:
-
-/usr/include/opencascade/Aspect_XAtom.hxx:
-
-/usr/include/c++/14/bits/cxxabi_forced.h:
-
-/usr/include/opencascade/BRepLib_EdgeError.hxx:
-
-/home/morvux/cao/src/Modelisation.h:
-
-/usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake:
-
-/usr/include/opencascade/GProp_GProps.hxx:
-
-/usr/include/opencascade/gp_Vec3f.hxx:
-
-/usr/include/opencascade/AIS_DisplayStatus.hxx:
-
 /usr/include/opencascade/TColgp_Array2OfPnt.hxx:
 
 /usr/include/c++/14/new:
@@ -12232,6 +12269,36 @@ freetable3d_autogen/moc_predefs.h:
 
 /usr/include/opencascade/Standard_RangeError.hxx:
 
+/usr/include/opencascade/Graphic3d_PresentationAttributes.hxx:
+
+/usr/include/c++/14/bits/char_traits.h:
+
+/usr/include/opencascade/TopLoc_ItemLocation.hxx:
+
+/usr/include/opencascade/TopoDS_Vertex.hxx:
+
+/usr/include/opencascade/NCollection_Array2.hxx:
+
+/usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsDependencies.cmake:
+
+/usr/include/opencascade/Graphic3d_TextureMap.hxx:
+
+/usr/include/opencascade/Aspect_XAtom.hxx:
+
+/usr/include/c++/14/bits/cxxabi_forced.h:
+
+/usr/include/opencascade/BRepLib_EdgeError.hxx:
+
+/home/morvux/cao/src/Modelisation.h:
+
+/usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusAdditionalTargetInfo.cmake:
+
+/usr/include/opencascade/GProp_GProps.hxx:
+
+/usr/include/opencascade/gp_Vec3f.hxx:
+
+/usr/include/opencascade/AIS_DisplayStatus.hxx:
+
 /usr/include/opencascade/Graphic3d_Vec.hxx:
 
 /usr/include/opencascade/Aspect_Drawable.hxx:
@@ -12287,16 +12354,6 @@ freetable3d_autogen/mocs_compilation.cpp:
 /usr/include/opencascade/BRepOffsetAPI_MakeOffsetShape.hxx:
 
 /usr/include/c++/14/cstdint:
-
-/usr/include/c++/14/bits/utility.h:
-
-/usr/include/opencascade/Aspect_FrustumLRBT.hxx:
-
-/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialog:
-
-/usr/lib/x86_64-linux-gnu/cmake/Qt6DBusTools/Qt6DBusToolsTargets.cmake:
-
-/usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusTargets-none.cmake:
 
 /usr/include/opencascade/Aspect_TypeOfMarker.hxx:
 
@@ -12437,6 +12494,8 @@ freetable3d_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/bits/unistd_ext.h:
 
 /usr/include/c++/14/iomanip:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h:
 
 /usr/include/c++/14/list:
 
@@ -12796,10 +12855,6 @@ freetable3d_autogen/mocs_compilation.cpp:
 
 /usr/include/opencascade/gp_Trsf2d.hxx:
 
-/usr/include/opencascade/OpenGl_Material.hxx:
-
-/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
-
 /usr/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake:
 
 /usr/include/opencascade/gp_TrsfForm.hxx:
@@ -13001,6 +13056,12 @@ freetable3d_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qtnoop.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QList:
+
+/usr/include/opencascade/OpenGl_Material.hxx:
+
+/usr/include/x86_64-linux-gnu/bits/pthreadtypes.h:
+
+/usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile:
 
 /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject:
 
@@ -13364,12 +13425,6 @@ CMakeFiles/freetable3d.dir/src/Modelisation.cpp.o:
 
 /usr/include/x86_64-linux-gnu/sys/select.h:
 
-/usr/include/opencascade/BRepOffset_DataMapOfShapeOffset.hxx:
-
-/usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtWidgets/QDialogButtonBox:
-
 /usr/lib/x86_64-linux-gnu/cmake/Qt6GuiTools/Qt6GuiToolsDependencies.cmake:
 
 /usr/include/x86_64-linux-gnu/sys/types.h:
@@ -13495,6 +13550,8 @@ freetable3d_autogen/UVLADIE3JM/moc_MainWindow.cpp:
 /lib/x86_64-linux-gnu/libjbig.so.0:
 
 /usr/lib/x86_64-linux-gnu/cmake/Qt6DBus/Qt6DBusConfig.cmake:
+
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp:
 
 /usr/include/opencascade/Quantity_TypeOfColor.hxx:
 
@@ -13657,9 +13714,3 @@ freetable3d_autogen/UVLADIE3JM/moc_ViewerWidget.cpp:
 /usr/lib/x86_64-linux-gnu/libTKDESTL.so:
 
 /usr/include/x86_64-linux-gnu/sys/single_threaded.h:
-
-/usr/lib/gcc/x86_64-linux-gnu/14/include/stdint.h:
-
-/usr/include/x86_64-linux-gnu/qt6/QtGui/QCloseEvent:
-
-/usr/lib/gcc/x86_64-linux-gnu/14/include/syslimits.h:

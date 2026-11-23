@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
 
 # Qt 6 : interface graphique (LGPL)
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
@@ -59,7 +60,8 @@ add_executable(freetable3d
     src/Modelisation.h
     src/Modelisation.cpp
     src/GrilleAxes.h
-    src/GrilleAxes.cpp)
+    src/GrilleAxes.cpp
+    ressources.qrc)
 
 # Windows : application graphique, sans fenêtre de console noire.
 if(WIN32)

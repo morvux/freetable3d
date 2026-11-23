@@ -3,6 +3,8 @@
 #include <vector>
 
 #include <QList>
+#include <QLockFile>
+#include <memory>
 #include <QMainWindow>
 
 #include "Document.h"
@@ -69,9 +71,16 @@ private slots:
 
 private:
     void creerMenus();
+    void dispositionParDefaut();
     void creerPanneauPieces();
     void creerPanneaux();
     void majTitre();
+
+    // Sauvegarde automatique et récupération après un arrêt anormal
+    static QString dossierRecuperation();
+    void           sauvegardeAutomatique();
+    void           effacerRecuperation();
+    void           proposerRecuperation();
     void appliquerPlateau();
     bool confirmerAbandon();
     void majEtatEsquisse(bool actif);
@@ -108,6 +117,9 @@ private:
 
     QString m_chemin;        // fichier .ft3d courant (vide = projet jamais enregistré)
     bool    m_modifie = false;
+
+    std::unique_ptr<QLockFile> m_verrou; // une seule instance gère la sauvegarde automatique
+    class QTimer*              m_minuteurAuto = nullptr;
 
     ModeSelection m_mode = ModeSelection::Piece;
     bool          m_miseAJourListe = false;

@@ -76,5 +76,11 @@
   "command": "/usr/bin/c++ -DFREETABLE3D_VERSION=\\\"0.1.1\\\" -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/freetable3d_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o -c /home/morvux/cao/src/GrilleAxes.cpp",
   "file": "/home/morvux/cao/src/GrilleAxes.cpp",
   "output": "CMakeFiles/freetable3d.dir/src/GrilleAxes.cpp.o"
+},
+{
+  "directory": "/home/morvux/cao/build",
+  "command": "/usr/bin/c++ -DFREETABLE3D_VERSION=\\\"0.1.1\\\" -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I/home/morvux/cao/build/freetable3d_autogen/include -I/usr/include/opencascade -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -O3 -DNDEBUG -std=gnu++17 -o CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o -c /home/morvux/cao/build/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp",
+  "file": "/home/morvux/cao/build/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp",
+  "output": "CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o"
 }
 ]

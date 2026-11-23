@@ -220,6 +220,30 @@ freetable3d_autogen/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d_autogen.dir/build.make CMakeFiles/freetable3d_autogen.dir/build
 .PHONY : freetable3d_autogen/fast
 
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.o: freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.o
+
+# target to build an object file
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o
+
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.i: freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.i
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.i
+
+# target to preprocess a source file
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.i
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.i
+
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.s: freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.s
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.s
+
+# target to generate assembly for a file
+freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/freetable3d.dir/build.make CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.s
+.PHONY : freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.s
+
 freetable3d_autogen/mocs_compilation.o: freetable3d_autogen/mocs_compilation.cpp.o
 .PHONY : freetable3d_autogen/mocs_compilation.o
 
@@ -549,6 +573,9 @@ help:
 	@echo "... freetable3d_autogen"
 	@echo "... freetable3d_autogen_timestamp_deps"
 	@echo "... freetable3d"
+	@echo "... freetable3d_autogen/EWIEGA46WW/qrc_ressources.o"
+	@echo "... freetable3d_autogen/EWIEGA46WW/qrc_ressources.i"
+	@echo "... freetable3d_autogen/EWIEGA46WW/qrc_ressources.s"
 	@echo "... freetable3d_autogen/mocs_compilation.o"
 	@echo "... freetable3d_autogen/mocs_compilation.i"
 	@echo "... freetable3d_autogen/mocs_compilation.s"

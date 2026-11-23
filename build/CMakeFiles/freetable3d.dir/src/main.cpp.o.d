@@ -404,6 +404,8 @@ CMakeFiles/freetable3d.dir/src/main.cpp.o: /home/morvux/cao/src/main.cpp \
  /home/morvux/cao/src/Traduction.h /home/morvux/cao/src/MainWindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \

@@ -407,6 +407,8 @@ CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o: \
  /home/morvux/cao/build/freetable3d_autogen/UVLADIE3JM/../../../src/MainWindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtabwidget.h \

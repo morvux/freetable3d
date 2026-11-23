@@ -1,4 +1,0 @@
-/usr/bin/freetable3d
-/usr/share/applications/freetable3d.desktop
-/usr/share/icons/hicolor/scalable/apps/freetable3d.svg
-/usr/share/doc/FreeTable3D/copyright

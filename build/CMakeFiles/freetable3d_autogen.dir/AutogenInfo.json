@@ -227,7 +227,8 @@
 		"/usr/share/cmake-3.31/Modules/CPack.cmake",
 		"/usr/share/cmake-3.31/Modules/CPackComponent.cmake",
 		"/usr/share/cmake-3.31/Templates/CPackConfig.cmake.in",
-		"/usr/share/cmake-3.31/Templates/CPackConfig.cmake.in"
+		"/usr/share/cmake-3.31/Templates/CPackConfig.cmake.in",
+		"/home/morvux/cao/ressources.qrc"
 	],
 	"CMAKE_SOURCE_DIR" : "/home/morvux/cao",
 	"CROSS_CONFIG" : false,

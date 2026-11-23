@@ -587,6 +587,16 @@ const Entree kTableAnglais[] = {
      "the result no longer contains a solid (hole larger than the part?)"},
     {"le trou ne rencontre pas la pièce (décalage trop grand ?)",
      "the hole does not meet the part (offset too large?)"},
+    {"&Disposition par défaut",
+     "&Default layout"},
+    {"Récupération du travail",
+     "Work recovery"},
+    {"FreeTable3D ne s'est pas fermé normalement. Une sauvegarde automatique a été trouvée (%1).\n\nVoulez-vous la restaurer ?",
+     "FreeTable3D did not close normally. An automatic backup was found (%1).\n\nDo you want to restore it?"},
+    {"La sauvegarde automatique n'a pas pu être lue.",
+     "The automatic backup could not be read."},
+    {"Travail restauré. Pensez à l'enregistrer.",
+     "Work restored. Remember to save it."},
 };
 const int kNombreAnglais = sizeof(kTableAnglais) / sizeof(kTableAnglais[0]);
 } // namespace traduction

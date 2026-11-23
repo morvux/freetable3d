@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <QAction>
 #include <QCoreApplication>
@@ -34,6 +35,14 @@
 #include <QCursor>
 #include <QToolBar>
 #include <QToolTip>
+#include <QRect>
+#include <QScreen>
+#include <QScrollArea>
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QStandardPaths>
+#include <QTimer>
 
 #include "DialogueDimensions.h"
 #include "Icones.h"
@@ -55,20 +64,14 @@ MainWindow::MainWindow(QWidget* parent)
     creerPanneaux();
     creerMenus();
 
-    // Largeur des panneaux à l'ouverture : liste des pièces 150 px à gauche, propriétés
-    // 370 px à droite ; la vue 3D prend le reste de la fenêtre.
+    // Disposition par défaut, puis celle de la dernière session si elle a été mémorisée
+    dispositionParDefaut();
     {
-        QDockWidget* gauche = nullptr;
-        QDockWidget* droite = nullptr;
-        for (QDockWidget* dock : findChildren<QDockWidget*>())
-        {
-            if (dockWidgetArea(dock) == Qt::LeftDockWidgetArea)
-                gauche = dock;
-            else if (dockWidgetArea(dock) == Qt::RightDockWidgetArea)
-                droite = dock;
-        }
-        if (gauche && droite)
-            resizeDocks({gauche, droite}, {150, 370}, Qt::Horizontal);
+        QSettings reglages("FreeTable3D", "FreeTable3D");
+        if (reglages.contains("fenetre/geometrie"))
+            restoreGeometry(reglages.value("fenetre/geometrie").toByteArray());
+        if (reglages.contains("fenetre/etat"))
+            restoreState(reglages.value("fenetre/etat").toByteArray());
     }
 
     connect(m_vue, &ViewerWidget::selectionChangee, this, &MainWindow::surSelectionChangee);
@@ -114,6 +117,17 @@ MainWindow::MainWindow(QWidget* parent)
     appliquerPlateau();
     m_modifie = false;
     majTitre();
+
+    // Sauvegarde automatique : une minute d'intervalle, seulement dans la première instance ouverte
+    m_verrou = std::make_unique<QLockFile>(dossierRecuperation() + QStringLiteral("/instance.lock"));
+    if (m_verrou->tryLock(0))
+    {
+        m_minuteurAuto = new QTimer(this);
+        m_minuteurAuto->setInterval(60 * 1000);
+        connect(m_minuteurAuto, &QTimer::timeout, this, &MainWindow::sauvegardeAutomatique);
+        m_minuteurAuto->start();
+        QTimer::singleShot(0, this, &MainWindow::proposerRecuperation);
+    }
 }
 
 void MainWindow::creerPanneauPieces()
@@ -123,6 +137,7 @@ void MainWindow::creerPanneauPieces()
     connect(m_liste, &QListWidget::itemSelectionChanged, this, &MainWindow::surSelectionListe);
 
     auto* panneau = new QDockWidget(tr("Pièces"), this);
+    panneau->setObjectName(QStringLiteral("dockPieces"));
     panneau->setWidget(m_liste);
     panneau->setFeatures(QDockWidget::NoDockWidgetFeatures);
     addDockWidget(Qt::LeftDockWidgetArea, panneau);
@@ -133,7 +148,15 @@ void MainWindow::creerPanneaux()
     m_panneau = new PanneauProprietes;
 
     auto* dock = new QDockWidget(tr("Propriétés"), this);
-    dock->setWidget(m_panneau);
+    dock->setObjectName(QStringLiteral("dockProprietes"));
+    // Zone à défilement : un panneau très long (esquisse avec beaucoup de profils) ne doit jamais
+    // agrandir la fenêtre au-delà de l'écran.
+    auto* defilement = new QScrollArea;
+    defilement->setWidget(m_panneau);
+    defilement->setWidgetResizable(true);
+    defilement->setFrameShape(QFrame::NoFrame);
+    defilement->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    dock->setWidget(defilement);
     dock->setFeatures(QDockWidget::NoDockWidgetFeatures);
     addDockWidget(Qt::RightDockWidgetArea, dock);
 
@@ -165,6 +188,7 @@ void MainWindow::creerMenus()
     };
 
     QToolBar* barre = addToolBar(tr("Outils"));
+    barre->setObjectName(QStringLiteral("barreOutils"));
     barre->setMovable(false);
 
     // --- Fichier ---
@@ -307,6 +331,9 @@ void MainWindow::creerMenus()
 
     action(menuVue, tr("&Plateau de l'imprimante…"), QKeySequence(),
            [this]() { reglerPlateau(); });
+
+    action(menuVue, tr("&Disposition par défaut"), QKeySequence(),
+           [this]() { dispositionParDefaut(); });
 
     QAction* aGrille = menuVue->addAction(tr("&Grille et axes"));
     aGrille->setCheckable(true);
@@ -1635,6 +1662,93 @@ void MainWindow::reglerPlateau()
     appliquerPlateau();
 }
 
+QString MainWindow::dossierRecuperation()
+{
+    const QString dossier = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir().mkpath(dossier);
+    return dossier;
+}
+
+void MainWindow::sauvegardeAutomatique()
+{
+    if (!m_modifie || m_document.vide())
+        return;
+
+    // On écrit dans un fichier temporaire, puis on le renomme : un plantage pendant l'écriture
+    // ne détruit pas la sauvegarde précédente.
+    const QString dossier = dossierRecuperation();
+    const QString temporaire = dossier + QStringLiteral("/recuperation.tmp");
+    const QString final      = dossier + QStringLiteral("/recuperation.ft3d");
+    const QString infos      = dossier + QStringLiteral("/recuperation.info");
+
+    if (!m_document.enregistrer(temporaire.toStdString()))
+    {
+        QFile::remove(temporaire);
+        return;
+    }
+    QFile::remove(final);
+    QFile::rename(temporaire, final);
+
+    // Chemin du projet d'origine (vide s'il n'a jamais été enregistré)
+    QFile fichierInfos(infos);
+    if (fichierInfos.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        fichierInfos.write(m_chemin.toUtf8());
+}
+
+void MainWindow::effacerRecuperation()
+{
+    const QString dossier = dossierRecuperation();
+    QFile::remove(dossier + QStringLiteral("/recuperation.ft3d"));
+    QFile::remove(dossier + QStringLiteral("/recuperation.tmp"));
+    QFile::remove(dossier + QStringLiteral("/recuperation.info"));
+}
+
+void MainWindow::proposerRecuperation()
+{
+    const QString dossier = dossierRecuperation();
+    const QString final   = dossier + QStringLiteral("/recuperation.ft3d");
+    if (!QFile::exists(final))
+        return;
+
+    const QString date = QLocale().toString(QFileInfo(final).lastModified(), QLocale::ShortFormat);
+    const auto reponse = QMessageBox::question(
+        this, tr("Récupération du travail"),
+        tr("FreeTable3D ne s'est pas fermé normalement. Une sauvegarde automatique a été "
+           "trouvée (%1).\n\nVoulez-vous la restaurer ?")
+            .arg(date),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+
+    if (reponse != QMessageBox::Yes)
+    {
+        effacerRecuperation();
+        return;
+    }
+
+    Document charge;
+    if (!charge.charger(final.toStdString()))
+    {
+        QMessageBox::warning(this, tr("Récupération du travail"),
+                             tr("La sauvegarde automatique n'a pas pu être lue."));
+        effacerRecuperation();
+        return;
+    }
+
+    QString cheminOrigine;
+    QFile fichierInfos(dossier + QStringLiteral("/recuperation.info"));
+    if (fichierInfos.open(QIODevice::ReadOnly))
+        cheminOrigine = QString::fromUtf8(fichierInfos.readAll());
+
+    if (m_vue->esquisseActive())
+        quitterEsquisse();
+    m_document = std::move(charge);
+    m_chemin   = cheminOrigine;
+    rafraichir();
+    m_vue->recadrer();
+    m_modifie = true; // à enregistrer : la sauvegarde automatique reste en place jusque-là
+    majTitre();
+    statusBar()->showMessage(tr("Travail restauré. Pensez à l'enregistrer."), 8000);
+}
+
 void MainWindow::majTitre()
 {
     const QString nom = m_chemin.isEmpty() ? tr("Sans titre") : QFileInfo(m_chemin).fileName();
@@ -1657,12 +1771,51 @@ bool MainWindow::confirmerAbandon()
     return true;
 }
 
+void MainWindow::dispositionParDefaut()
+{
+    // Fenêtre 1315 x 920 px ; liste des pièces 150 px à gauche, propriétés 370 px à droite ;
+    // la vue 3D prend le reste.
+    if (isMaximized() || isFullScreen())
+        showNormal();
+
+    // 1315 x 920 px, mais jamais plus de 95 % de l'écran disponible (écrans plus petits)
+    int largeur = 1315;
+    int hauteur = 920;
+    if (const QScreen* ecran = screen())
+    {
+        const QRect disponible = ecran->availableGeometry();
+        largeur = std::min(largeur, disponible.width() * 95 / 100);
+        hauteur = std::min(hauteur, disponible.height() * 95 / 100);
+    }
+    resize(largeur, hauteur);
+
+    QDockWidget* gauche = nullptr;
+    QDockWidget* droite = nullptr;
+    for (QDockWidget* dock : findChildren<QDockWidget*>())
+    {
+        if (dockWidgetArea(dock) == Qt::LeftDockWidgetArea)
+            gauche = dock;
+        else if (dockWidgetArea(dock) == Qt::RightDockWidgetArea)
+            droite = dock;
+    }
+    if (gauche && droite)
+        resizeDocks({gauche, droite}, {150, 370}, Qt::Horizontal);
+}
+
 void MainWindow::closeEvent(QCloseEvent* evenement)
 {
-    if (confirmerAbandon())
-        evenement->accept();
-    else
+    if (!confirmerAbandon())
+    {
         evenement->ignore();
+        return;
+    }
+
+    // Mémorise la taille et la position de la fenêtre et des panneaux
+    QSettings reglages("FreeTable3D", "FreeTable3D");
+    reglages.setValue("fenetre/geometrie", saveGeometry());
+    reglages.setValue("fenetre/etat", saveState());
+    effacerRecuperation(); // fermeture normale : plus besoin de la sauvegarde automatique
+    evenement->accept();
 }
 
 void MainWindow::nouveauProjet()
@@ -1677,6 +1830,7 @@ void MainWindow::nouveauProjet()
     rafraichir();
     m_modifie = false;
     majTitre();
+    effacerRecuperation();
 }
 
 void MainWindow::ouvrirProjet()
@@ -1705,6 +1859,7 @@ void MainWindow::ouvrirProjet()
     m_vue->recadrer();
     m_modifie = false;
     majTitre();
+    effacerRecuperation();
     statusBar()->showMessage(tr("Projet ouvert : %1").arg(chemin));
 }
 
@@ -1721,6 +1876,7 @@ bool MainWindow::enregistrerProjet()
     }
     m_modifie = false;
     majTitre();
+    effacerRecuperation();
     statusBar()->showMessage(tr("Projet enregistré : %1").arg(m_chemin));
     return true;
 }

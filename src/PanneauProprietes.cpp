@@ -14,6 +14,7 @@
 #include <QLocale>
 #include <QPushButton>
 #include <QStringList>
+#include <QPixmap>
 #include <QVBoxLayout>
 
 #include "Modelisation.h"
@@ -66,7 +67,7 @@ QWidget* ligne(QDoubleSpinBox* const champs[3])
 PanneauProprietes::PanneauProprietes(QWidget* parent)
     : QWidget(parent)
 {
-    setMinimumWidth(360);
+    setMinimumWidth(330);
 
     auto* principal = new QVBoxLayout(this);
 
@@ -212,7 +213,37 @@ PanneauProprietes::PanneauProprietes(QWidget* parent)
     reglages->addRow(tr("Axe de la rotation (touche R)"), axeRotation);
     principal->addWidget(groupeReglages);
 
-    principal->addStretch(1);
+    // Image au bas du panneau, avec la mention de la licence
+    {
+        const qreal   ratio = devicePixelRatioF();
+        const int     largeur = 200;
+        QPixmap       image(QStringLiteral(":/logo.png"));
+        if (!image.isNull())
+        {
+            image = image.scaledToWidth(qRound(largeur * ratio), Qt::SmoothTransformation);
+            image.setDevicePixelRatio(ratio);
+
+            auto* etiquetteImage = new QLabel;
+            etiquetteImage->setPixmap(image);
+            etiquetteImage->setAlignment(Qt::AlignHCenter | Qt::AlignBottom); // collée au texte dessous
+            // L'image occupe l'espace libre sous les réglages, alignée en bas ; si la fenêtre est
+            // très basse, elle est rognée sans agrandir le panneau.
+            etiquetteImage->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Ignored);
+            principal->addWidget(etiquetteImage, 1);
+        }
+        else
+        {
+            principal->addStretch(1);
+        }
+
+        auto* etiquetteLicence = new QLabel(QStringLiteral("GNU/GPL"));
+        etiquetteLicence->setAlignment(Qt::AlignCenter);
+        QFont police = etiquetteLicence->font();
+        police.setBold(true);
+        police.setPointSizeF(police.pointSizeF() + 2.0);
+        etiquetteLicence->setFont(police);
+        principal->addWidget(etiquetteLicence);
+    }
 
     viderTextes();
 }

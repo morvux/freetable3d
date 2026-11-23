@@ -891,5 +891,7 @@ CMakeFiles/freetable3d.dir/src/PanneauProprietes.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qabstractbutton.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QPixmap \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qpixmap.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
  /home/morvux/cao/src/Modelisation.h

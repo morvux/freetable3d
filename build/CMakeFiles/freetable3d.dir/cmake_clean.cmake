@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/freetable3d_autogen.dir/AutogenUsed.txt"
   "CMakeFiles/freetable3d_autogen.dir/ParseCache.txt"
   "freetable3d_autogen"
+  "CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o"
+  "CMakeFiles/freetable3d.dir/freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp.o.d"
   "CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o"
   "CMakeFiles/freetable3d.dir/freetable3d_autogen/mocs_compilation.cpp.o.d"
   "CMakeFiles/freetable3d.dir/src/DialogueDimensions.cpp.o"
@@ -31,6 +33,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/freetable3d.dir/src/main.cpp.o.d"
   "freetable3d"
   "freetable3d.pdb"
+  "freetable3d_autogen/EWIEGA46WW/qrc_ressources.cpp"
   "freetable3d_autogen/mocs_compilation.cpp"
   "freetable3d_autogen/timestamp"
 )

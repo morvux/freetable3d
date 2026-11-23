@@ -700,6 +700,7 @@
   /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
   /usr/include/x86_64-linux-gnu/gnu/stubs.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QList \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QObject \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QPoint \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
@@ -766,6 +767,7 @@
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qline.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlist.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlocale.h \
+  /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qlogging.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmalloc.h \
   /usr/include/x86_64-linux-gnu/qt6/QtCore/qmap.h \

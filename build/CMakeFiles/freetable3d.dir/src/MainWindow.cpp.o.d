@@ -303,6 +303,11 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qalgorithms.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringmatcher.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QLockFile \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qlockfile.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qscopedpointer.h \
+ /usr/include/c++/14/chrono /usr/include/c++/14/bits/chrono.h \
+ /usr/include/c++/14/ratio /usr/include/c++/14/ctime \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QMainWindow \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qmainwindow.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtwidgetsglobal.h \
@@ -317,7 +322,6 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobjectdefs_impl.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qfunctionaltools_impl.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobject.h \
- /usr/include/x86_64-linux-gnu/qt6/QtCore/qscopedpointer.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qmetatype.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatastream.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qiodevicebase.h \
@@ -334,8 +338,6 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /usr/include/c++/14/bits/stl_multimap.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qobject_impl.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qbindingstorage.h \
- /usr/include/c++/14/chrono /usr/include/c++/14/bits/chrono.h \
- /usr/include/c++/14/ratio /usr/include/c++/14/ctime \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qmargins.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/q23utility.h \
  /usr/include/x86_64-linux-gnu/qt6/QtGui/qaction.h \
@@ -967,6 +969,22 @@ CMakeFiles/freetable3d.dir/src/MainWindow.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtoolbar.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QToolTip \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qtooltip.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QRect \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/QScreen \
+ /usr/include/x86_64-linux-gnu/qt6/QtGui/qscreen.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QScrollArea \
+ /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qscrollarea.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QDateTime \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qdatetime.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QDir \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qdir.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QFile \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qfile.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QStandardPaths \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qstandardpaths.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
+ /usr/include/x86_64-linux-gnu/qt6/QtCore/qbasictimer.h \
  /home/morvux/cao/src/DialogueDimensions.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QStringList \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstringlist.h \
