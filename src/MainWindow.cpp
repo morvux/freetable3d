@@ -343,8 +343,12 @@ void MainWindow::creerMenus()
     aGrille->setCheckable(true);
     aGrille->setChecked(true);
     aGrille->setShortcut(QKeySequence("G"));
-    connect(aGrille, &QAction::toggled, this,
-            [this](bool visible) { m_vue->afficherGrille(visible); });
+    connect(aGrille, &QAction::toggled, this, [this](bool visible) {
+        m_vue->afficherGrille(visible);
+        QSettings("FreeTable3D", "FreeTable3D").setValue("vue/grille", visible);
+    });
+    // Dernier état mémorisé (la vue est créée avant : le changement s'applique aussitôt)
+    aGrille->setChecked(QSettings("FreeTable3D", "FreeTable3D").value("vue/grille", true).toBool());
 
     // --- Aide ---
     QMenu* menuAide = menuBar()->addMenu(tr("&Aide"));
@@ -2010,6 +2014,11 @@ void MainWindow::exporterSTL()
     qualite->addItem(tr("Fin (0,01 mm)"), 0.01);
     qualite->addItem(tr("Très fin (0,005 mm) — fichier volumineux"), 0.005);
     qualite->setCurrentIndex(1);
+    {
+        const int enregistre = QSettings("FreeTable3D", "FreeTable3D").value("export/finesse", 1).toInt();
+        if (enregistre >= 0 && enregistre < qualite->count())
+            qualite->setCurrentIndex(enregistre);
+    }
     formulaire->addRow(tr("Finesse du maillage"), qualite);
     mise->addLayout(formulaire);
 
@@ -2023,6 +2032,7 @@ void MainWindow::exporterSTL()
 
     const bool seulementSelection = selection->isChecked();
     const double deflexion = qualite->currentData().toDouble();
+    QSettings("FreeTable3D", "FreeTable3D").setValue("export/finesse", qualite->currentIndex());
 
     QString chemin = QFileDialog::getSaveFileName(
         this, tr("Exporter en STL"), "piece.stl", tr("Fichiers STL (*.stl)"));

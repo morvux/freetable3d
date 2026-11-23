@@ -300,6 +300,7 @@ private:
     Handle(AIS_Shape)         m_objetProfils;
     Handle(CotesEsquisse)     m_objetCotes;
     std::vector<InfoCote>     m_infosCotes;
+    Handle(SelectMgr_EntityOwner) m_dernierSurvol; // dernier élément survolé (pour limiter les redessins)
     bool                      m_ignorerRelache = false;
     Handle(AIS_Shape)         m_objetApercu;
     QString                   m_saisie;     // cotes tapées au clavier

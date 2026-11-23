@@ -217,6 +217,7 @@ int ViewerWidget::idPieceDe(const Handle(AIS_InteractiveObject)& objet) const
 
 void ViewerWidget::afficherDocument(const Document& document)
 {
+    m_dernierSurvol.Nullify();
     for (const ObjetAffiche& affiche : m_objets)
         m_contexte->Remove(affiche.objet, false);
     m_objets.clear();
@@ -741,6 +742,7 @@ void ViewerWidget::masquerBulle()
 void ViewerWidget::leaveEvent(QEvent*)
 {
     masquerBulle();
+    m_dernierSurvol.Nullify();
 }
 
 void ViewerWidget::paintEvent(QPaintEvent*)
@@ -779,6 +781,7 @@ void ViewerWidget::showEvent(QShowEvent*)
 void ViewerWidget::mousePressEvent(QMouseEvent* evenement)
 {
     m_ignorerRelache = false;
+    m_dernierSurvol.Nullify();
     m_dernierePosition = versPixels(evenement->position());
     m_positionPression = m_dernierePosition;
     m_gesteDemarre = false;
@@ -872,9 +875,18 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
         }
         else
         {
-            // Simple survol : mise en surbrillance de l'élément sous le curseur
+            // Simple survol : mise en surbrillance de l'élément sous le curseur.
+            // On ne redessine que si l'élément survolé change, pour éviter le scintillement.
             masquerBulle();
-            m_contexte->MoveTo(position.x(), position.y(), m_vue, true);
+            m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
+            Handle(SelectMgr_EntityOwner) survole;
+            if (m_contexte->HasDetected())
+                survole = m_contexte->DetectedOwner();
+            if (survole.get() != m_dernierSurvol.get())
+            {
+                m_dernierSurvol = survole;
+                m_contexte->UpdateCurrentViewer();
+            }
         }
     }
 }
@@ -921,6 +933,7 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
     m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
     m_contexte->SelectDetected(schema);
     m_contexte->UpdateCurrentViewer(); // redessine pour afficher la couleur de sélection
+    m_dernierSurvol.Nullify();
     emit selectionChangee();
 }
 

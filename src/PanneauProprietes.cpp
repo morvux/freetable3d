@@ -6,7 +6,9 @@
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
+#include <QSettings>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -49,6 +51,22 @@ QDoubleSpinBox* creerChamp(const QString& prefixe, const QString& suffixe,
     champ->setKeyboardTracking(false);
     champ->setEnabled(false);
     return champ;
+}
+
+// Remet dans la liste la valeur mémorisée au dernier lancement (si elle existe encore)
+void restaurerReglage(QComboBox* liste, const QString& cle)
+{
+    const QVariant enregistre = QSettings("FreeTable3D", "FreeTable3D").value(cle);
+    if (!enregistre.isValid())
+        return;
+    for (int i = 0; i < liste->count(); ++i)
+    {
+        if (std::abs(liste->itemData(i).toDouble() - enregistre.toDouble()) < 1e-9)
+        {
+            liste->setCurrentIndex(i);
+            return;
+        }
+    }
 }
 
 QWidget* ligne(QDoubleSpinBox* const champs[3])
@@ -177,12 +195,17 @@ PanneauProprietes::PanneauProprietes(QWidget* parent)
     // Les valeurs par défaut correspondent à celles de ViewerWidget (1 mm, 15°, axe Z).
     auto* aimantationGrille = new QComboBox;
     aimantationGrille->addItem(tr("Libre"), 0.0);
+    aimantationGrille->addItem(tr("0,1 mm"), 0.1);
+    aimantationGrille->addItem(tr("0,5 mm"), 0.5);
     aimantationGrille->addItem(tr("1 mm"), 1.0);
     aimantationGrille->addItem(tr("5 mm"), 5.0);
     aimantationGrille->addItem(tr("10 mm"), 10.0);
-    aimantationGrille->setCurrentIndex(1);
+    aimantationGrille->setCurrentIndex(3); // 1 mm
+    restaurerReglage(aimantationGrille, QStringLiteral("reglages/aimantationGrille"));
     connect(aimantationGrille, &QComboBox::currentIndexChanged, this,
             [this, aimantationGrille](int index) {
+                QSettings("FreeTable3D", "FreeTable3D")
+                    .setValue("reglages/aimantationGrille", aimantationGrille->itemData(index).toDouble());
                 emit aimantationGrilleChangee(aimantationGrille->itemData(index).toDouble());
             });
     reglages->addRow(tr("Aimantation à la grille"), aimantationGrille);
@@ -194,8 +217,11 @@ PanneauProprietes::PanneauProprietes(QWidget* parent)
     aimantationAngle->addItem(tr("45°"), 45.0);
     aimantationAngle->addItem(tr("90°"), 90.0);
     aimantationAngle->setCurrentIndex(2);
+    restaurerReglage(aimantationAngle, QStringLiteral("reglages/aimantationAngle"));
     connect(aimantationAngle, &QComboBox::currentIndexChanged, this,
             [this, aimantationAngle](int index) {
+                QSettings("FreeTable3D", "FreeTable3D")
+                    .setValue("reglages/aimantationAngle", aimantationAngle->itemData(index).toDouble());
                 emit aimantationAngleChangee(aimantationAngle->itemData(index).toDouble());
             });
     reglages->addRow(tr("Aimantation des angles"), aimantationAngle);
@@ -205,12 +231,30 @@ PanneauProprietes::PanneauProprietes(QWidget* parent)
     axeRotation->addItem(tr("Y"));
     axeRotation->addItem(tr("Z (vertical)"));
     axeRotation->setCurrentIndex(2);
+    {
+        const int enregistre = QSettings("FreeTable3D", "FreeTable3D").value("reglages/axeRotation", 2).toInt();
+        if (enregistre >= 0 && enregistre < 3)
+            axeRotation->setCurrentIndex(enregistre);
+    }
     connect(axeRotation, &QComboBox::currentIndexChanged, this, [this](int index) {
         const AxeRotation axes[3] = {AxeRotation::X, AxeRotation::Y, AxeRotation::Z};
         if (index >= 0 && index < 3)
+        {
+            QSettings("FreeTable3D", "FreeTable3D").setValue("reglages/axeRotation", index);
             emit axeRotationChange(axes[index]);
+        }
     });
     reglages->addRow(tr("Axe de la rotation (touche R)"), axeRotation);
+
+    // Les réglages retrouvés doivent être transmis à la vue une fois les connexions faites
+    QTimer::singleShot(0, this, [this, aimantationGrille, aimantationAngle, axeRotation]() {
+        emit aimantationGrilleChangee(aimantationGrille->currentData().toDouble());
+        emit aimantationAngleChangee(aimantationAngle->currentData().toDouble());
+        const AxeRotation axes[3] = {AxeRotation::X, AxeRotation::Y, AxeRotation::Z};
+        const int         index   = axeRotation->currentIndex();
+        if (index >= 0 && index < 3)
+            emit axeRotationChange(axes[index]);
+    });
     principal->addWidget(groupeReglages);
 
     // Image au bas du panneau, avec la mention de la licence
