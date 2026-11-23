@@ -597,6 +597,20 @@ const Entree kTableAnglais[] = {
      "The automatic backup could not be read."},
     {"Travail restauré. Pensez à l'enregistrer.",
      "Work restored. Remember to save it."},
+    {"L %1 × H %2 mm",
+     "W %1 × H %2 mm"},
+    {"R %1 mm · Ø %2 mm",
+     "R %1 mm · Ø %2 mm"},
+    {"Longueur %1 mm · angle %2°",
+     "Length %1 mm · angle %2°"},
+    {"X %1 · Y %2",
+     "X %1 · Y %2"},
+    {"\nFace : %1 × %2 mm",
+     "\nFace: %1 × %2 mm"},
+    {"Dimensions",
+     "Dimensions"},
+    {"Ces dimensions sont impossibles pour cette pièce (trop faibles ?). Elles n'ont pas été appliquées.",
+     "These dimensions are not possible for this part (too small?). They were not applied."},
 };
 const int kNombreAnglais = sizeof(kTableAnglais) / sizeof(kTableAnglais[0]);
 } // namespace traduction

@@ -650,7 +650,9 @@ TopoDS_Shape changerDiametre(const TopoDS_Shape& forme, double diametre)
     return forme;
 }
 
-TopoDS_Shape redimensionner(const TopoDS_Shape& forme, double nx, double ny, double nz)
+namespace
+{
+TopoDS_Shape redimensionnerBrut(const TopoDS_Shape& forme, double nx, double ny, double nz)
 {
     Bnd_Box boite;
     BRepBndLib::Add(forme, boite, false);
@@ -690,6 +692,24 @@ TopoDS_Shape redimensionner(const TopoDS_Shape& forme, double nx, double ny, dou
     g.SetValue(2, 4, y0 * (1.0 - sy));
     g.SetValue(3, 4, z0 * (1.0 - sz));
     return BRepBuilderAPI_GTransform(forme, g, true).Shape();
+}
+} // namespace
+
+TopoDS_Shape redimensionner(const TopoDS_Shape& forme, double nx, double ny, double nz)
+{
+    // Une dimension trop faible peut faire échouer OpenCascade : dans ce cas (ou si le résultat est
+    // invalide) on rend la forme d'origine, ce que l'appelant détecte en comparant les formes.
+    try
+    {
+        const TopoDS_Shape resultat = redimensionnerBrut(forme, nx, ny, nz);
+        if (resultat.IsNull() || !BRepCheck_Analyzer(resultat).IsValid())
+            return forme;
+        return resultat;
+    }
+    catch (const Standard_Failure&)
+    {
+        return forme;
+    }
 }
 
 bool booleen(const TopoDS_Shape& base, const std::vector<TopoDS_Shape>& outils,

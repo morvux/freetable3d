@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <QKeyEvent>
+#include <QLabel>
 #include <QPoint>
 #include <QString>
 #include <QVector>
@@ -159,6 +160,7 @@ protected:
     void wheelEvent(QWheelEvent* evenement) override;
     void keyPressEvent(QKeyEvent* evenement) override;
     bool event(QEvent* evenement) override;
+    void leaveEvent(QEvent* evenement) override;
 
 private:
     QPoint versPixels(const QPointF& logique) const;
@@ -227,6 +229,9 @@ private:
     // Point défini par les cotes tapées au clavier (dans la direction de la souris).
     bool pointDepuisSaisie(gp_Pnt2d& uv) const;
     void rafraichirApercuSaisie();
+    // Petite bulle d'information qui suit le curseur pendant le tracé.
+    void afficherBulle(const QString& texte);
+    void masquerBulle();
 
     Handle(V3d_Viewer)             m_viewer;
     Handle(V3d_View)               m_vue;
@@ -281,4 +286,5 @@ private:
     Handle(AIS_Shape)         m_objetApercu;
     QString                   m_saisie;     // cotes tapées au clavier
     gp_Pnt2d                  m_dernierUV;  // dernière position de la souris dans le plan
+    QLabel*                   m_bulle = nullptr;
 };

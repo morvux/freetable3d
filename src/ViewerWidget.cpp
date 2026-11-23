@@ -1,9 +1,13 @@
 #include "ViewerWidget.h"
 
 #include <algorithm>
+#include <algorithm>
+#include <array>
+#include <functional>
 #include <cmath>
 #include <cstddef>
 
+#include <QCursor>
 #include <QEvent>
 #include <QLocale>
 #include <QRegularExpression>
@@ -581,6 +585,15 @@ void ViewerWidget::mettreAJourEtirement(const QPoint& ecran)
                          .arg(QString::number(m.xmax - m.xmin, 'f', 2),
                               QString::number(m.ymax - m.ymin, 'f', 2),
                               QString::number(m.zmax - m.zmin, 'f', 2));
+    // Dimensions de la face étirée : les deux plus grandes étendues de sa boîte englobante
+    const modelisation::Mesures face = modelisation::mesurer(m_faceEtiree);
+    if (face.boiteValide)
+    {
+        std::array<double, 3> e = {face.xmax - face.xmin, face.ymax - face.ymin, face.zmax - face.zmin};
+        std::sort(e.begin(), e.end(), std::greater<double>());
+        dimensions += tr("\nFace : %1 × %2 mm")
+                          .arg(QString::number(e[0], 'f', 2), QString::number(e[1], 'f', 2));
+    }
     annoncerGeste(tr("Étirement : %1 mm%2").arg(QString::number(distance, 'f', 2), dimensions));
 }
 
@@ -694,6 +707,38 @@ void ViewerWidget::terminerGeste()
 // ---------------------------------------------------------------------------
 // Événements Qt
 // ---------------------------------------------------------------------------
+
+void ViewerWidget::afficherBulle(const QString& texte)
+{
+    if (!m_bulle)
+    {
+        // Fenêtre indépendante (la vue OpenGL ne peut pas porter de widget enfant).
+        m_bulle = new QLabel(nullptr, Qt::ToolTip | Qt::FramelessWindowHint | Qt::WindowTransparentForInput
+                                          | Qt::WindowDoesNotAcceptFocus);
+        m_bulle->setAttribute(Qt::WA_ShowWithoutActivating);
+        m_bulle->setAttribute(Qt::WA_TransparentForMouseEvents);
+        m_bulle->setTextFormat(Qt::PlainText);
+        m_bulle->setStyleSheet(QStringLiteral(
+            "QLabel { background-color: rgba(30, 36, 48, 225); color: #ffffff; border: 1px solid #f2c200;"
+            " border-radius: 4px; padding: 3px 7px; }"));
+    }
+    m_bulle->setText(texte);
+    m_bulle->adjustSize();
+    m_bulle->move(QCursor::pos() + QPoint(18, 22));
+    if (!m_bulle->isVisible())
+        m_bulle->show();
+}
+
+void ViewerWidget::masquerBulle()
+{
+    if (m_bulle)
+        m_bulle->hide();
+}
+
+void ViewerWidget::leaveEvent(QEvent*)
+{
+    masquerBulle();
+}
 
 void ViewerWidget::paintEvent(QPaintEvent*)
 {
@@ -824,6 +869,7 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
         else
         {
             // Simple survol : mise en surbrillance de l'élément sous le curseur
+            masquerBulle();
             m_contexte->MoveTo(position.x(), position.y(), m_vue, true);
         }
     }
@@ -916,6 +962,7 @@ void ViewerWidget::demarrerEsquisse(const gp_Pnt& origine, const gp_Dir& normale
 
 void ViewerWidget::arreterEsquisse()
 {
+    masquerBulle();
     effacerApercu();
     if (!m_objetProfils.IsNull())
     {
@@ -1085,6 +1132,23 @@ void ViewerWidget::mettreAJourApercu(const gp_Pnt2d& uv)
 
         const QLocale lieu;
         const gp_Pnt2d& depart = m_pointsEnCours.front();
+        {
+            auto n = [&lieu](double valeur) { return lieu.toString(valeur, 'f', 2); };
+            QString bulle;
+            if (m_outilEsquisse == OutilEsquisse::Rectangle)
+                bulle = QObject::tr("L %1 × H %2 mm").arg(n(std::abs(uv.X() - depart.X())),
+                                                          n(std::abs(uv.Y() - depart.Y())));
+            else if (m_outilEsquisse == OutilEsquisse::Cercle)
+                bulle = QObject::tr("R %1 mm · Ø %2 mm").arg(n(depart.Distance(uv)), n(2.0 * depart.Distance(uv)));
+            else
+            {
+                const gp_Pnt2d& dernier = m_pointsEnCours.back();
+                const double    angle   = std::atan2(uv.Y() - dernier.Y(), uv.X() - dernier.X()) * 180.0 / 3.14159265358979323846;
+                bulle = QObject::tr("Longueur %1 mm · angle %2°").arg(n(dernier.Distance(uv)), n(angle));
+            }
+            bulle += QStringLiteral("\n") + QObject::tr("X %1 · Y %2").arg(n(uv.X()), n(uv.Y()));
+            afficherBulle(bulle);
+        }
         if (m_outilEsquisse == OutilEsquisse::Rectangle)
             emit messageApercu(QObject::tr("Rectangle : %1 × %2 mm")
                                    .arg(lieu.toString(std::abs(uv.X() - depart.X()), 'f', 2),
@@ -1100,6 +1164,7 @@ void ViewerWidget::mettreAJourApercu(const gp_Pnt2d& uv)
     else
     {
         const QLocale lieu;
+        afficherBulle(QObject::tr("X %1 · Y %2").arg(lieu.toString(uv.X(), 'f', 2), lieu.toString(uv.Y(), 'f', 2)));
         emit messageApercu(QObject::tr("Esquisse : position (%1 ; %2) mm")
                                .arg(lieu.toString(uv.X(), 'f', 2), lieu.toString(uv.Y(), 'f', 2)));
     }

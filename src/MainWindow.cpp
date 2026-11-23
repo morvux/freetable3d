@@ -526,9 +526,18 @@ void MainWindow::surDimensionsDemandees(double x, double y, double z)
     const std::vector<int> ids = idsSelectionnes();
     if (!pieceUniqueSelectionnee(this, m_document, ids, m_mode))
         return;
-    m_document.modifier(ids, [=](const TopoDS_Shape& forme) {
-        return modelisation::redimensionner(forme, x, y, z);
-    });
+    const Piece* piece = m_document.trouver(ids.front());
+    const TopoDS_Shape resultat = piece ? modelisation::redimensionner(piece->forme, x, y, z) : TopoDS_Shape();
+    if (!piece || resultat.IsSame(piece->forme))
+    {
+        // Rien n'a changé : dimension impossible (trop faible ?) — on remet les anciennes valeurs.
+        QMessageBox::warning(this, tr("Dimensions"),
+                             tr("Ces dimensions sont impossibles pour cette pièce (trop faibles ?). "
+                                "Elles n'ont pas été appliquées."));
+        rafraichirEnGardantSelection(ids);
+        return;
+    }
+    m_document.modifier(ids, [&resultat](const TopoDS_Shape&) { return resultat; });
     rafraichirEnGardantSelection(ids);
 }
 
