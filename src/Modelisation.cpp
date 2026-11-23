@@ -652,6 +652,68 @@ TopoDS_Shape changerDiametre(const TopoDS_Shape& forme, double diametre)
 
 namespace
 {
+// Allonge (ou raccourcit) une pièce selon un axe (0 = X, 1 = Y, 2 = Z) en déplaçant sa face
+// extrême « haute » : les trous et autres détails des autres endroits ne sont pas déformés.
+// Rend false si la pièce n'a pas de face plane à cet endroit.
+bool allongerSelonAxe(TopoDS_Shape& forme, int axe, double delta)
+{
+    Bnd_Box boite;
+    BRepBndLib::Add(forme, boite, false);
+    if (boite.IsVoid())
+        return false;
+    double mini[3], maxi[3];
+    boite.Get(mini[0], mini[1], mini[2], maxi[0], maxi[1], maxi[2]);
+
+    BRep_Builder    constructeur;
+    TopoDS_Compound faces;
+    constructeur.MakeCompound(faces);
+    int nbFaces = 0;
+    for (TopExp_Explorer ex(forme, TopAbs_FACE); ex.More(); ex.Next())
+    {
+        gp_Pnt point;
+        gp_Vec normale;
+        if (!reperFacePlane(ex.Current(), point, normale))
+            continue;
+        const double composantes[3] = {normale.X(), normale.Y(), normale.Z()};
+        const double coordonnees[3] = {point.X(), point.Y(), point.Z()};
+        if (composantes[axe] > 1.0 - 1e-9 && std::abs(coordonnees[axe] - maxi[axe]) < 1e-6)
+        {
+            constructeur.Add(faces, ex.Current());
+            ++nbFaces;
+        }
+    }
+    if (nbFaces == 0)
+        return false;
+
+    const gp_Vec deplacement = gp_Vec(axe == 0 ? 1.0 : 0.0, axe == 1 ? 1.0 : 0.0, axe == 2 ? 1.0 : 0.0) * delta;
+    BRepPrimAPI_MakePrism prisme(faces, deplacement);
+    if (!prisme.IsDone())
+        return false;
+
+    TopoDS_Shape resultat;
+    if (delta > 0.0)
+    {
+        BRepAlgoAPI_Fuse operation(forme, prisme.Shape());
+        if (!operation.IsDone())
+            return false;
+        resultat = operation.Shape();
+    }
+    else
+    {
+        BRepAlgoAPI_Cut operation(forme, prisme.Shape());
+        if (!operation.IsDone())
+            return false;
+        resultat = operation.Shape();
+    }
+    if (resultat.IsNull())
+        return false;
+
+    ShapeUpgrade_UnifySameDomain nettoyage(resultat, true, true, true);
+    nettoyage.Build();
+    forme = nettoyage.Shape();
+    return true;
+}
+
 TopoDS_Shape redimensionnerBrut(const TopoDS_Shape& forme, double nx, double ny, double nz)
 {
     Bnd_Box boite;
@@ -712,6 +774,36 @@ TopoDS_Shape redimensionnerBrut(const TopoDS_Shape& forme, double nx, double ny,
             const gp_Ax2 axe(gp_Pnt(centre.X(), centre.Y(), z0), gp_Dir(0.0, 0.0, 1.0));
             return BRepPrimAPI_MakeCylinder(axe, diametre / 2.0, nz).Shape();
         }
+    }
+
+    // Pièce à faces planes sur ses côtés « hauts » (bloc percé, pièce évidée...) : on déplace ces
+    // faces plutôt que de déformer toute la pièce, ce qui garde les trous intacts.
+    {
+        TopoDS_Shape essai = forme;
+        const double cibles[3]  = {nx, ny, nz};
+        const double actuels[3] = {dx, dy, dz};
+        bool         ok         = true;
+        bool         modifie    = false;
+        for (int axe = 0; axe < 3 && ok; ++axe)
+        {
+            // Les champs ont 2 décimales : on ignore les écarts inférieurs
+            double actuel = actuels[axe];
+            if (modifie)
+            {
+                Bnd_Box b;
+                BRepBndLib::Add(essai, b, false);
+                double a0, a1, a2, b0, b1, b2;
+                b.Get(a0, a1, a2, b0, b1, b2);
+                const double tailles[3] = {b0 - a0, b1 - a1, b2 - a2};
+                actuel = tailles[axe];
+            }
+            if (std::abs(cibles[axe] - actuel) <= 0.006)
+                continue;
+            ok = allongerSelonAxe(essai, axe, cibles[axe] - actuel);
+            modifie = modifie || ok;
+        }
+        if (ok && modifie)
+            return essai;
     }
 
     // Sinon : étirement différent selon les axes, coin bas fixe
