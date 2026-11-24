@@ -1,26 +1,47 @@
 # FreeTable3D
 
-Logiciel libre de CAO pour l'impression 3D, en C++ avec OpenCascade et Qt 6.
+Logiciel libre de CAO simple, pensé pour concevoir des pièces à imprimer en 3D. Écrit en C++ avec
+OpenCascade et Qt 6, pour Linux et Windows. Interface en français et en anglais.
 
 Dépôt : https://github.com/morvux/freetable3d
+
+![FreeTable3D](docs/capture.png)
+
+## Fonctions
+
+- Formes de base (cube, cylindre, sphère) et **esquisses** 2D (rectangle, cercle, polygone) avec cotes
+  modifiables par double-clic, saisie des dimensions au clavier et précision au dixième de millimètre
+- **Extrusion** : nouvelle pièce, ajout de matière ou creusement dans une pièce existante
+- Déplacement, rotation, redimensionnement par valeurs, étirement d'une face, poser une face à plat
+- Perçage, congés, chanfreins, évidement (coque), symétrie, duplication et réseaux
+- Union, soustraction et intersection de pièces
+- Copier / coller, annuler / rétablir, sauvegarde automatique avec récupération après un plantage
+- Plateau d'impression et grille graduée en millimètres
+- Projets `.ft3d`, import **STEP**, export **STL** (impression) et **STEP** (autres logiciels de CAO)
 
 ## Installation
 
 Téléchargez le fichier correspondant à votre système depuis la page des
 [versions](https://github.com/morvux/freetable3d/releases).
 
-**Linux** : un paquet `.deb` par distribution (un `.deb` ne s'installe que sur la version de Debian
-pour laquelle il a été construit) :
+### Linux : AppImage
 
-- `freetable3d_0.1.3_debian12_amd64.deb` : Debian 12 / MX Linux 23
-- `freetable3d_0.1.3_debian13_amd64.deb` : Debian 13
+Un seul fichier, sans installation, qui fonctionne sur la plupart des distributions récentes :
 
-Puis, par exemple :
+    chmod +x FreeTable3D-0.1.3-x86_64.AppImage
+    ./FreeTable3D-0.1.3-x86_64.AppImage
 
-    sudo apt install ./freetable3d_0.1.3_debian12_amd64.deb
+Si l'AppImage ne se lance pas, il manque peut-être la bibliothèque FUSE :
 
-**Windows 11** : `FreeTable3D-0.1.3-windows-setup.exe`. Windows peut afficher un avertissement
-(SmartScreen), car l'installateur n'est pas signé : « Informations complémentaires » puis « Exécuter quand même ».
+    sudo apt install libfuse2        # sur les versions récentes : libfuse2t64
+
+Vous pouvez aussi la lancer sans FUSE : `./FreeTable3D-0.1.3-x86_64.AppImage --appimage-extract-and-run`.
+
+### Windows 11 : installateur
+
+Téléchargez `FreeTable3D-0.1.3-windows-setup.exe` et lancez-le. Windows peut afficher un
+avertissement (SmartScreen), car l'installateur n'est pas signé : cliquez sur « Informations
+complémentaires », puis « Exécuter quand même ».
 
 ## Compilation (Debian / MX Linux)
 
@@ -34,6 +55,15 @@ Compilation et lancement :
 
     cmake -B build && cmake --build build -j
     ./build/freetable3d
+
+Pour construire l'AppImage : `bash packaging/appimage/construire.sh`
+(à lancer sur la distribution la plus ancienne que vous visez, pour une compatibilité maximale).
+
+## Contribuer
+
+Les signalements de problèmes et les suggestions sont les bienvenus dans les
+[Issues](https://github.com/morvux/freetable3d/issues). Pour un problème d'affichage, indiquez votre
+système, votre bureau et votre carte graphique.
 
 ## Licence
 
