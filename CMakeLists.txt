@@ -68,6 +68,10 @@ add_executable(freetable3d
 # Windows : application graphique, sans fenêtre de console noire.
 if(WIN32)
     set_target_properties(freetable3d PROPERTIES WIN32_EXECUTABLE ON)
+    # Icône intégrée à l'exécutable (Explorateur de fichiers, barre des tâches)
+    enable_language(RC)
+    set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} -I${CMAKE_SOURCE_DIR}/packaging/windows")
+    target_sources(freetable3d PRIVATE packaging/windows/freetable3d.rc)
 endif()
 
 # Numéro de version, affiché dans « À propos »

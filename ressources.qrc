@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file alias="logo.png">packaging/tux.png</file>
+        <file alias="icone.png">packaging/icone.png</file>
     </qresource>
 </RCC>

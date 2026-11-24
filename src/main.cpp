@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QColor>
+#include <QIcon>
 #include <QPalette>
 #include <QStyleFactory>
 #include <QtGlobal>
@@ -94,7 +95,13 @@ int main(int argc, char* argv[])
     application.setApplicationName("FreeTable3D");
     application.setOrganizationName("FreeTable3D");
     application.setDesktopFileName("freetable3d");
-    application.setWindowIcon(icones::creer("cube"));
+    {
+        // Icône de la fenêtre : celle du logiciel, à défaut un cube dessiné par le programme
+        QIcon icone(QStringLiteral(":/icone.png"));
+        if (icone.isNull())
+            icone = icones::creer("cube");
+        application.setWindowIcon(icone);
+    }
     traduction::installer(application);
     appliquerTheme(application);
 
