@@ -10,7 +10,7 @@ set -e
 RACINE="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$RACINE"
 
-VERSION="$(grep -m1 -oP 'VERSION \K[0-9.]+' CMakeLists.txt)"
+VERSION="$(grep -m1 -oP 'project\(FreeTable3D VERSION \K[0-9.]+' CMakeLists.txt)"
 OUTILS="$RACINE/outils"
 mkdir -p "$OUTILS"
 
