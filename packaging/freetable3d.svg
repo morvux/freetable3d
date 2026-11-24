@@ -1,43 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <rect x="8" y="8" width="240" height="240" rx="48" fill="#2b3038"/>
-
-  <!-- trajectoires des objets jonglés -->
-  <g fill="none" stroke="#4a5260" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 9">
-    <path d="M74 96 Q 80 40 128 40"/>
-    <path d="M182 96 Q 176 40 128 40"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#123e86"/><stop offset="1" stop-color="#06152f"/></linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#54c7ff"/><stop offset="1" stop-color="#1265d9"/></linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7777"/><stop offset="1" stop-color="#d91b37"/></linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b6ff68"/><stop offset="1" stop-color="#30b64e"/></linearGradient>
+    <linearGradient id="belly" x1="0" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d9e5f7"/></linearGradient>
+    <clipPath id="inside"><circle cx="256" cy="244" r="218"/></clipPath>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%"><feGaussianBlur in="SourceAlpha" stdDeviation="5"/><feOffset dy="4"/><feComponentTransfer><feFuncA type="linear" slope=".3"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <!-- circular badge -->
+  <circle cx="256" cy="244" r="232" fill="#071b38" stroke="#1678ef" stroke-width="12"/>
+  <circle cx="256" cy="244" r="218" fill="url(#badge)" stroke="#5ab9ff" stroke-width="3"/>
+  <!-- CAD grid -->
+  <g clip-path="url(#inside)" opacity=".42" fill="none" stroke="#56baff" stroke-width="2">
+    <path d="M35 120H477 M24 164H488 M15 208H497 M10 252H502 M15 296H497 M24 340H488 M35 384H477"/>
+    <path d="M70 35V440 M118 26V454 M166 22V466 M214 20V468 M262 20V468 M310 20V468 M358 22V466 M406 26V454 M454 35V440"/>
+    <path d="M25 370L256 460 487 370 M35 330L256 420 477 330 M48 290L256 380 464 290" opacity=".5"/>
   </g>
-
-  <!-- cube -->
-  <polygon points="58,50 73,58 58,66 43,58" fill="#ffb273"/>
-  <polygon points="43,58 58,66 58,86 43,78" fill="#ff8a3d"/>
-  <polygon points="73,58 58,66 58,86 73,78" fill="#d96a1e"/>
-
-  <!-- sphère -->
-  <circle cx="128" cy="40" r="16" fill="#6fb7ff"/>
-  <circle cx="122" cy="34" r="5" fill="#c9e5ff"/>
-
-  <!-- triangle -->
-  <polygon points="198,48 215,80 181,80" fill="#7bd88f"/>
-  <polygon points="198,48 215,80 198,80" fill="#58b56e"/>
-
-  <!-- manchot -->
-  <path d="M100 138 Q80 124 72 102" fill="none" stroke="#5b7fb0" stroke-width="10" stroke-linecap="round"/>
-  <path d="M156 138 Q176 124 184 102" fill="none" stroke="#5b7fb0" stroke-width="10" stroke-linecap="round"/>
-  <ellipse cx="112" cy="196" rx="13" ry="6" fill="#ff8a3d"/>
-  <ellipse cx="144" cy="196" rx="13" ry="6" fill="#ff8a3d"/>
-  <ellipse cx="128" cy="154" rx="30" ry="44" fill="#5b7fb0"/>
-  <circle cx="128" cy="114" r="23" fill="#5b7fb0"/>
-  <ellipse cx="128" cy="164" rx="19" ry="31" fill="#f4f7fb"/>
-  <ellipse cx="128" cy="119" rx="16" ry="14" fill="#f4f7fb"/>
-  <circle cx="121" cy="112" r="4.5" fill="#2b3038"/>
-  <circle cx="135" cy="112" r="4.5" fill="#2b3038"/>
-  <circle cx="122.5" cy="110.5" r="1.4" fill="#fff"/>
-  <circle cx="136.5" cy="110.5" r="1.4" fill="#fff"/>
-  <polygon points="122,119 134,119 128,129" fill="#ff8a3d"/>
-
-  <!-- inscription 3D -->
-  <g fill="none" stroke="#f2f4f7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M94 216 H113 L103 227 Q118 227 118 235 Q118 244 104 244 Q97 244 94 240"/>
-    <path d="M136 216 V244 H142 Q162 244 162 230 Q162 216 142 216 Z"/>
+  <!-- juggling motion arcs -->
+  <g fill="none" stroke="#e4f5ff" stroke-width="5" stroke-linecap="round" opacity=".85">
+    <path d="M132 148Q89 106 130 70" stroke-dasharray="2 13"/><path d="M382 150Q426 105 388 69" stroke-dasharray="2 13"/>
+    <path d="M108 222Q71 182 92 157"/><path d="M405 222Q443 183 422 157"/>
   </g>
+  <!-- blue cube -->
+  <g filter="url(#shadow)" stroke="#d9f2ff" stroke-width="4" stroke-linejoin="round">
+    <path d="M202 54L253 24 306 53 254 84Z" fill="#66caff"/>
+    <path d="M202 54L254 84 254 144 202 114Z" fill="#2686e8"/>
+    <path d="M254 84L306 53 306 113 254 144Z" fill="#1458bb"/>
+  </g>
+  <!-- red sphere -->
+  <g filter="url(#shadow)"><circle cx="114" cy="168" r="42" fill="url(#red)" stroke="#ffd9e0" stroke-width="4"/><ellipse cx="101" cy="151" rx="12" ry="16" fill="#fff" opacity=".5" transform="rotate(28 101 151)"/></g>
+  <!-- green triangular solid -->
+  <g filter="url(#shadow)" stroke="#e5ffe0" stroke-width="4" stroke-linejoin="round">
+    <path d="M393 126L435 201 352 201Z" fill="url(#green)"/>
+    <path d="M393 126L394 183 435 201Z" fill="#75d84b"/>
+    <path d="M394 183L352 201 435 201Z" fill="#238b40"/>
+  </g>
+  <!-- Tux penguin mascot, arms raised -->
+  <g filter="url(#shadow)" stroke="#050a12" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+    <!-- flippers -->
+    <path d="M202 286Q151 267 120 225Q109 208 101 214Q94 221 105 250Q122 291 160 313Q187 327 218 310Z" fill="#101722"/>
+    <path d="M309 286Q360 267 391 225Q402 208 410 214Q417 221 406 250Q389 291 351 313Q324 327 293 310Z" fill="#101722"/>
+    <!-- body -->
+    <ellipse cx="256" cy="278" rx="83" ry="118" fill="#0c111a"/>
+    <ellipse cx="256" cy="302" rx="57" ry="90" fill="url(#belly)" stroke="none"/>
+    <!-- head -->
+    <circle cx="256" cy="201" r="65" fill="#101722"/>
+    <!-- eyes -->
+    <ellipse cx="231" cy="193" rx="21" ry="29" fill="#fff" stroke="none" transform="rotate(-8 231 193)"/>
+    <ellipse cx="281" cy="193" rx="21" ry="29" fill="#fff" stroke="none" transform="rotate(8 281 193)"/>
+    <ellipse cx="234" cy="194" rx="8" ry="13" fill="#05070b" stroke="none"/>
+    <ellipse cx="278" cy="194" rx="8" ry="13" fill="#05070b" stroke="none"/>
+    <circle cx="236" cy="188" r="3.5" fill="#fff" stroke="none"/><circle cx="280" cy="188" r="3.5" fill="#fff" stroke="none"/>
+    <!-- beak -->
+    <path d="M208 223Q256 208 304 223Q291 244 256 245Q222 245 208 223Z" fill="#ffcf30" stroke="#e69a00" stroke-width="4"/>
+    <!-- feet -->
+    <path d="M224 385Q208 398 195 405Q211 416 239 410L256 402 273 410Q301 416 317 405Q304 398 288 385Z" fill="#ffb52d" stroke="#e88b12" stroke-width="4"/>
+  </g>
+  <!-- foreground title plate -->
+  <g filter="url(#shadow)">
+    <rect x="48" y="405" width="416" height="76" rx="25" fill="#06152c" stroke="#1687ff" stroke-width="7"/>
+    <rect x="57" y="414" width="398" height="58" rx="18" fill="#0a2346" stroke="#3bb9ff" stroke-width="2"/>
+  </g>
+  <text x="256" y="456" text-anchor="middle" font-family="DejaVu Sans, Arial, sans-serif" font-size="39" font-weight="800" letter-spacing="-1"><tspan fill="#f7fbff">freetable</tspan><tspan fill="#35c7ff">3d</tspan></text>
 </svg>
