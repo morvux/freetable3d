@@ -45,6 +45,9 @@
 #include <Graphic3d_NameOfMaterial.hxx>
 #include <Prs3d_Drawer.hxx>
 #include <Prs3d_LineAspect.hxx>
+#include <Prs3d_ShadingAspect.hxx>
+#include <Graphic3d_AspectFillArea3d.hxx>
+#include <Aspect_PolygonOffsetMode.hxx>
 #include <Prs3d_TypeOfHighlight.hxx>
 #include <Quantity_Color.hxx>
 #include <StdSelect_BRepOwner.hxx>
@@ -145,12 +148,23 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     // Couleurs de surbrillance : par défaut elles sont trop proches de la couleur
     // des pièces. Survol = gris foncé, sélection = orange vif, avec des lignes
     // épaisses pour bien voir les arêtes.
-    auto configurerSurbrillance = [this](Prs3d_TypeOfHighlight type, const Quantity_Color& couleur) {
+    // Le décalage de profondeur (polygon offset) évite que la surbrillance et la face
+    // d'origine, situées au même endroit, se disputent les pixels (scintillement,
+    // surtout autour des perçages). La surbrillance de survol passe devant celle de
+    // sélection, qui passe elle-même devant la pièce.
+    auto configurerSurbrillance = [this](Prs3d_TypeOfHighlight type, const Quantity_Color& couleur,
+                                         float decalage) {
         const Handle(Prs3d_Drawer)& style = m_contexte->HighlightStyle(type);
         style->SetColor(couleur);
         style->SetDisplayMode(AIS_Shaded);
+        style->SetFaceBoundaryDraw(false);
         style->SetLineAspect(new Prs3d_LineAspect(couleur, Aspect_TOL_SOLID, 3.0));
         style->SetWireAspect(new Prs3d_LineAspect(couleur, Aspect_TOL_SOLID, 3.0));
+
+        Handle(Prs3d_ShadingAspect) ombrage = new Prs3d_ShadingAspect();
+        ombrage->SetColor(couleur);
+        ombrage->Aspect()->SetPolygonOffsets(Aspect_POM_Fill, -decalage, -decalage);
+        style->SetShadingAspect(ombrage);
     };
     const Quantity_Color grisSurvol(0.33, 0.35, 0.40, Quantity_TOC_RGB);
     const Quantity_Color orangeSelection(1.00, 0.42, 0.00, Quantity_TOC_RGB);
@@ -158,10 +172,10 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     // OpenCascade utilise des styles distincts selon que l'élément est un objet
     // entier (Dynamic / Selected) ou une partie d'un objet, face ou arête
     // (LocalDynamic / LocalSelected) : il faut régler les quatre.
-    configurerSurbrillance(Prs3d_TypeOfHighlight_Dynamic, grisSurvol);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalDynamic, grisSurvol);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_Selected, orangeSelection);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalSelected, orangeSelection);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_Dynamic, grisSurvol, 4.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalDynamic, grisSurvol, 4.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_Selected, orangeSelection, 2.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalSelected, orangeSelection, 2.0f);
 
     // Vue rattachée à la fenêtre native de ce widget
     m_vue = m_viewer->CreateView();
@@ -333,6 +347,10 @@ void ViewerWidget::orienterVue(V3d_TypeOfOrientation orientation)
 void ViewerWidget::definirModeSelection(ModeSelection mode)
 {
     m_mode = mode;
+
+    // Faces : surfaces étendues, une tolérance de 1 pixel évite d'hésiter entre deux faces
+    // voisines près d'une arête. Arêtes et pièces gardent la tolérance par défaut (2).
+    m_contexte->SetPixelTolerance(mode == ModeSelection::Face ? 1 : 2);
 
     m_contexte->ClearSelected(false);
     for (const ObjetAffiche& affiche : m_objets)
@@ -741,6 +759,8 @@ void ViewerWidget::masquerBulle()
 
 void ViewerWidget::leaveEvent(QEvent*)
 {
+    if (m_minuterieSurvol)
+        m_minuterieSurvol->stop();
     masquerBulle();
     m_dernierSurvol.Nullify();
 }
@@ -781,6 +801,8 @@ void ViewerWidget::showEvent(QShowEvent*)
 void ViewerWidget::mousePressEvent(QMouseEvent* evenement)
 {
     m_ignorerRelache = false;
+    if (m_minuterieSurvol)
+        m_minuterieSurvol->stop();
     m_dernierSurvol.Nullify();
     m_dernierePosition = versPixels(evenement->position());
     m_positionPression = m_dernierePosition;
@@ -877,17 +899,43 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
         {
             // Simple survol : mise en surbrillance de l'élément sous le curseur.
             // On ne redessine que si l'élément survolé change, pour éviter le scintillement.
+            // La détection est limitée à ~20 fois par seconde : près du bord d'un perçage,
+            // deux faces sont détectées à tour de rôle d'un pixel à l'autre, ce qui faisait
+            // clignoter la surbrillance quand la souris bougeait.
             masquerBulle();
-            m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
-            Handle(SelectMgr_EntityOwner) survole;
-            if (m_contexte->HasDetected())
-                survole = m_contexte->DetectedOwner();
-            if (survole.get() != m_dernierSurvol.get())
+            constexpr qint64 intervalleMs = 50;
+            m_survolEnAttente = position;
+            if (m_horlogeSurvol.isValid() && m_horlogeSurvol.elapsed() < intervalleMs)
             {
-                m_dernierSurvol = survole;
-                m_contexte->UpdateCurrentViewer();
+                if (!m_minuterieSurvol)
+                {
+                    m_minuterieSurvol = new QTimer(this);
+                    m_minuterieSurvol->setSingleShot(true);
+                    connect(m_minuterieSurvol, &QTimer::timeout, this, [this]() {
+                        if (!m_esquisseActive && m_geste == Geste::Aucun)
+                            appliquerSurvol(m_survolEnAttente);
+                    });
+                }
+                if (!m_minuterieSurvol->isActive())
+                    m_minuterieSurvol->start(static_cast<int>(intervalleMs - m_horlogeSurvol.elapsed()) + 1);
+                return;
             }
+            appliquerSurvol(position);
         }
+    }
+}
+
+void ViewerWidget::appliquerSurvol(const QPoint& position)
+{
+    m_horlogeSurvol.restart();
+    m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
+    Handle(SelectMgr_EntityOwner) survole;
+    if (m_contexte->HasDetected())
+        survole = m_contexte->DetectedOwner();
+    if (survole.get() != m_dernierSurvol.get())
+    {
+        m_dernierSurvol = survole;
+        m_contexte->UpdateCurrentViewer();
     }
 }
 

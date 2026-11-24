@@ -11,10 +11,12 @@
 
 #include <vector>
 
+#include <QElapsedTimer>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QPoint>
 #include <QString>
+#include <QTimer>
 #include <QVector>
 #include <QWidget>
 
@@ -247,6 +249,7 @@ private:
     // Petite bulle d'information qui suit le curseur pendant le tracé.
     void afficherBulle(const QString& texte);
     void masquerBulle();
+    void appliquerSurvol(const QPoint& position);
 
     Handle(V3d_Viewer)             m_viewer;
     Handle(V3d_View)               m_vue;
@@ -306,4 +309,7 @@ private:
     QString                   m_saisie;     // cotes tapées au clavier
     gp_Pnt2d                  m_dernierUV;  // dernière position de la souris dans le plan
     QLabel*                   m_bulle = nullptr;
+    QElapsedTimer             m_horlogeSurvol;            // limite la cadence du survol
+    QTimer*                   m_minuterieSurvol = nullptr; // applique le dernier survol en attente
+    QPoint                    m_survolEnAttente;
 };
