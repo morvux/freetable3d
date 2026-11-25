@@ -4,7 +4,7 @@
 ; Résultat : installateur\FreeTable3D-<version>-windows-setup.exe
 
 #define AppName "FreeTable3D"
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.4"
 
 [Setup]
 AppId={{B3A5F2D0-7C1E-4D1A-9F3B-6E2A1C0D4F57}

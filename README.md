@@ -5,8 +5,6 @@ OpenCascade et Qt 6, pour Linux et Windows. Interface en français et en anglais
 
 Dépôt : https://github.com/morvux/freetable3d
 
-![FreeTable3D](docs/capture.png)
-
 ## Fonctions
 
 - Formes de base (cube, cylindre, sphère) et **esquisses** 2D (rectangle, cercle, polygone) avec cotes
@@ -16,7 +14,10 @@ Dépôt : https://github.com/morvux/freetable3d
 - Perçage, congés, chanfreins, évidement (coque), symétrie, duplication et réseaux
 - Union, soustraction et intersection de pièces
 - Copier / coller, annuler / rétablir, sauvegarde automatique avec récupération après un plantage
-- Plateau d'impression et grille graduée en millimètres
+- **Mesure de distance** entre deux points (sommets, milieux d'arêtes, centres de faces, de cercles ou
+  de pièces), qui suit la pièce quand on la déplace ou l'étire
+- Plateau d'impression, grille graduée en millimètres et **contrôle avant impression** (validité,
+  taille du plateau, parois trop fines repérées en rouge)
 - Projets `.ft3d`, import **STEP**, export **STL** (impression) et **STEP** (autres logiciels de CAO)
 
 ## Installation
@@ -28,18 +29,18 @@ Téléchargez le fichier correspondant à votre système depuis la page des
 
 Un seul fichier, sans installation, qui fonctionne sur la plupart des distributions récentes :
 
-    chmod +x FreeTable3D-0.1.3-x86_64.AppImage
-    ./FreeTable3D-0.1.3-x86_64.AppImage
+    chmod +x FreeTable3D-0.1.4-x86_64.AppImage
+    ./FreeTable3D-0.1.4-x86_64.AppImage
 
 Si l'AppImage ne se lance pas, il manque peut-être la bibliothèque FUSE :
 
     sudo apt install libfuse2        # sur les versions récentes : libfuse2t64
 
-Vous pouvez aussi la lancer sans FUSE : `./FreeTable3D-0.1.3-x86_64.AppImage --appimage-extract-and-run`.
+Vous pouvez aussi la lancer sans FUSE : `./FreeTable3D-0.1.4-x86_64.AppImage --appimage-extract-and-run`.
 
 ### Windows 11 : installateur
 
-Téléchargez `FreeTable3D-0.1.3-windows-setup.exe` et lancez-le. Windows peut afficher un
+Téléchargez `FreeTable3D-0.1.4-windows-setup.exe` et lancez-le. Windows peut afficher un
 avertissement (SmartScreen), car l'installateur n'est pas signé : cliquez sur « Informations
 complémentaires », puis « Exécuter quand même ».
 
