@@ -22,6 +22,12 @@ echo "== Préparation du dossier AppDir =="
 rm -rf AppDir
 DESTDIR="$RACINE/AppDir" cmake --install build-appimage
 
+rm -f AppDir/usr/share/icons/hicolor/scalable/apps/freetable3d.svg
+mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
+cp packaging/icone.png AppDir/usr/share/icons/hicolor/512x512/apps/freetable3d.png
+cp packaging/icone.png AppDir/freetable3d.png
+ln -sf freetable3d.png AppDir/.DirIcon
+
 echo "== Outils linuxdeploy =="
 if [ ! -x "$OUTILS/linuxdeploy-x86_64.AppImage" ]; then
     wget -O "$OUTILS/linuxdeploy-x86_64.AppImage" \

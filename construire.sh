@@ -22,10 +22,13 @@ echo "== Préparation du dossier AppDir =="
 rm -rf AppDir
 DESTDIR="$RACINE/AppDir" cmake --install build-appimage
 
-# Icône PNG (512x512) : linuxdeploy s'en sert pour l'icône du fichier AppImage lui-même
-# (.DirIcon), affichée par les gestionnaires de fichiers qui lisent cette image.
+# Icône du fichier AppImage : linuxdeploy ne crée .DirIcon qu'à partir d'un PNG. On retire donc
+# le SVG de l'AppDir, on installe le PNG 512x512 et on crée nous-mêmes l'icône racine et .DirIcon.
+rm -f AppDir/usr/share/icons/hicolor/scalable/apps/freetable3d.svg
 mkdir -p AppDir/usr/share/icons/hicolor/512x512/apps
 cp packaging/icone.png AppDir/usr/share/icons/hicolor/512x512/apps/freetable3d.png
+cp packaging/icone.png AppDir/freetable3d.png
+ln -sf freetable3d.png AppDir/.DirIcon
 
 echo "== Outils linuxdeploy =="
 if [ ! -x "$OUTILS/linuxdeploy-x86_64.AppImage" ]; then
