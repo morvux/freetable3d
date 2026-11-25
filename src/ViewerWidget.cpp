@@ -31,6 +31,11 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRep_Builder.hxx>
+#include <BRep_Tool.hxx>
+#include <Geom_CartesianPoint.hxx>
+#include <SelectMgr_ViewerSelector.hxx>
+#include <TCollection_ExtendedString.hxx>
+#include <TopoDS_Vertex.hxx>
 #include <Standard_Failure.hxx>
 #include <TopoDS_Compound.hxx>
 #include <gp_Ax2.hxx>
@@ -231,6 +236,7 @@ int ViewerWidget::idPieceDe(const Handle(AIS_InteractiveObject)& objet) const
 
 void ViewerWidget::afficherDocument(const Document& document)
 {
+    effacerMesure(); // la géométrie change : les points mesurés ne valent plus
     m_dernierSurvol.Nullify();
     for (const ObjetAffiche& affiche : m_objets)
         m_contexte->Remove(affiche.objet, false);
@@ -250,6 +256,8 @@ void ViewerWidget::afficherDocument(const Document& document)
         m_contexte->Display(objet, AIS_Shaded, modeOcct(), false);
         m_objets.push_back({piece.id, objet});
     }
+    if (m_mesureActive)
+        activerModesMesure();
     m_contexte->UpdateCurrentViewer();
 }
 
@@ -347,6 +355,8 @@ void ViewerWidget::orienterVue(V3d_TypeOfOrientation orientation)
 void ViewerWidget::definirModeSelection(ModeSelection mode)
 {
     m_mode = mode;
+    if (m_mesureActive)
+        arreterMesure();
 
     // Faces : surfaces étendues, une tolérance de 1 pixel évite d'hésiter entre deux faces
     // voisines près d'une arête. Arêtes et pièces gardent la tolérance par défaut (2).
@@ -902,7 +912,8 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
             // La détection est limitée à ~20 fois par seconde : près du bord d'un perçage,
             // deux faces sont détectées à tour de rôle d'un pixel à l'autre, ce qui faisait
             // clignoter la surbrillance quand la souris bougeait.
-            masquerBulle();
+            if (!m_mesureActive)
+                masquerBulle();
             constexpr qint64 intervalleMs = 50;
             m_survolEnAttente = position;
             if (m_horlogeSurvol.isValid() && m_horlogeSurvol.elapsed() < intervalleMs)
@@ -937,6 +948,8 @@ void ViewerWidget::appliquerSurvol(const QPoint& position)
         m_dernierSurvol = survole;
         m_contexte->UpdateCurrentViewer();
     }
+    if (m_mesureActive)
+        mettreAJourApercuMesure();
 }
 
 void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
@@ -971,6 +984,13 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
     if (m_esquisseActive)
     {
         placerPointEsquisse(position);
+        return;
+    }
+
+    // Outil de mesure : un clic choisit un point à mesurer.
+    if (m_mesureActive)
+    {
+        ajouterPointMesure(position);
         return;
     }
 
@@ -1016,6 +1036,8 @@ void ViewerWidget::wheelEvent(QWheelEvent* evenement)
 
 void ViewerWidget::demarrerEsquisse(const gp_Pnt& origine, const gp_Dir& normale)
 {
+    if (m_mesureActive)
+        arreterMesure();
     arreterEsquisse();
 
     // Direction « u » du plan : X du monde, ou Z pour un plan vertical
@@ -1778,8 +1800,233 @@ bool ViewerWidget::event(QEvent* evenement)
     return QWidget::event(evenement);
 }
 
+// ---------------------------------------------------------------------------
+// Mesure de distance entre deux points
+// ---------------------------------------------------------------------------
+
+void ViewerWidget::activerModesMesure()
+{
+    // Sommets, arêtes et faces sont tous sélectionnables : les sommets (prioritaires) donnent
+    // un point exact, arêtes et faces donnent le point sous le curseur.
+    for (const ObjetAffiche& affiche : m_objets)
+    {
+        m_contexte->Deactivate(affiche.objet);
+        m_contexte->Activate(affiche.objet, AIS_Shape::SelectionMode(TopAbs_VERTEX));
+        m_contexte->Activate(affiche.objet, AIS_Shape::SelectionMode(TopAbs_EDGE));
+        m_contexte->Activate(affiche.objet, AIS_Shape::SelectionMode(TopAbs_FACE));
+    }
+}
+
+void ViewerWidget::definirOutilMesure(bool actif)
+{
+    if (actif == m_mesureActive)
+        return;
+
+    if (!actif)
+    {
+        arreterMesure();
+        return;
+    }
+
+    if (m_esquisseActive)
+        return; // pas de mesure pendant une esquisse
+
+    m_contexte->ClearSelected(false);
+    m_mesureActive = true;
+    m_pointsMesure.clear();
+    m_dernierSurvol.Nullify();
+    m_contexte->SetPixelTolerance(5); // viser un sommet doit rester facile
+    activerModesMesure();
+    setCursor(Qt::CrossCursor);
+    m_contexte->UpdateCurrentViewer();
+    emit selectionChangee();
+    emit messageApercu(tr("Mesure : cliquez sur un premier point (sommet, arête ou face), puis sur un second. "
+                          "Échap pour effacer puis quitter."));
+}
+
+void ViewerWidget::arreterMesure()
+{
+    if (!m_mesureActive)
+        return;
+    m_mesureActive = false;
+    effacerMesure();
+    masquerBulle();
+    unsetCursor();
+    m_dernierSurvol.Nullify();
+    m_contexte->SetPixelTolerance(m_mode == ModeSelection::Face ? 1 : 2);
+
+    for (const ObjetAffiche& affiche : m_objets)
+    {
+        m_contexte->Deactivate(affiche.objet);
+        m_contexte->Activate(affiche.objet, modeOcct());
+    }
+    m_contexte->ClearSelected(false);
+    m_contexte->UpdateCurrentViewer();
+    emit outilMesureArrete();
+    emit selectionChangee();
+}
+
+void ViewerWidget::retirerSegmentMesure()
+{
+    if (!m_ligneMesure.IsNull())
+    {
+        m_contexte->Remove(m_ligneMesure, false);
+        m_ligneMesure.Nullify();
+    }
+    if (!m_texteMesure.IsNull())
+    {
+        m_contexte->Remove(m_texteMesure, false);
+        m_texteMesure.Nullify();
+    }
+}
+
+void ViewerWidget::effacerMesure()
+{
+    retirerSegmentMesure();
+    for (const Handle(AIS_Point)& marqueur : m_marqueursMesure)
+        m_contexte->Remove(marqueur, false);
+    m_marqueursMesure.clear();
+    m_pointsMesure.clear();
+}
+
+bool ViewerWidget::pointMesure(gp_Pnt& point, bool& sommet) const
+{
+    sommet = false;
+    if (!m_contexte->HasDetected())
+        return false;
+
+    const Handle(SelectMgr_EntityOwner) proprietaire = m_contexte->DetectedOwner();
+    if (proprietaire.IsNull())
+        return false;
+
+    // Sommet : coordonnées exactes
+    const Handle(StdSelect_BRepOwner) brep = Handle(StdSelect_BRepOwner)::DownCast(proprietaire);
+    if (!brep.IsNull() && brep->HasShape() && brep->Shape().ShapeType() == TopAbs_VERTEX)
+    {
+        point  = BRep_Tool::Pnt(TopoDS::Vertex(brep->Shape()));
+        sommet = true;
+        return true;
+    }
+
+    // Arête ou face : point touché par le rayon de visée
+    const auto& selecteur = m_contexte->MainSelector();
+    for (Standard_Integer i = 1; i <= selecteur->NbPicked(); ++i)
+    {
+        if (selecteur->Picked(i).get() == proprietaire.get())
+        {
+            point = selecteur->PickedPoint(i);
+            return true;
+        }
+    }
+    return false;
+}
+
+QString ViewerWidget::texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail) const
+{
+    const QLocale lieu;
+    const QString distance = lieu.toString(a.Distance(b), 'f', 2);
+    if (!detail)
+        return QObject::tr("%1 mm").arg(distance);
+    return QObject::tr("Distance %1 mm  (dX %2 · dY %3 · dZ %4)")
+        .arg(distance,
+             lieu.toString(std::abs(b.X() - a.X()), 'f', 2),
+             lieu.toString(std::abs(b.Y() - a.Y()), 'f', 2),
+             lieu.toString(std::abs(b.Z() - a.Z()), 'f', 2));
+}
+
+void ViewerWidget::dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b)
+{
+    retirerSegmentMesure();
+    if (a.Distance(b) < 1e-7)
+        return;
+
+    m_ligneMesure = new AIS_Shape(BRepBuilderAPI_MakeEdge(a, b).Edge());
+    m_ligneMesure->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
+    m_ligneMesure->SetWidth(2.5);
+    m_contexte->Display(m_ligneMesure, AIS_WireFrame, -1, false);
+
+    const gp_Pnt milieu((a.X() + b.X()) / 2.0, (a.Y() + b.Y()) / 2.0, (a.Z() + b.Z()) / 2.0);
+    m_texteMesure = new AIS_TextLabel();
+    m_texteMesure->SetPosition(milieu);
+    m_texteMesure->SetText(TCollection_ExtendedString(texteMesure(a, b, false).toUtf8().constData(), true));
+    m_texteMesure->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
+    m_texteMesure->SetHeight(18.0);
+    m_contexte->Display(m_texteMesure, 0, -1, false);
+}
+
+void ViewerWidget::mettreAJourApercuMesure()
+{
+    // Après le premier point : un trait suit le curseur et la bulle donne la distance en direct.
+    if (m_pointsMesure.size() != 1)
+        return;
+
+    gp_Pnt p;
+    bool   sommet = false;
+    if (!pointMesure(p, sommet))
+    {
+        retirerSegmentMesure();
+        masquerBulle();
+        m_contexte->UpdateCurrentViewer();
+        return;
+    }
+    dessinerSegmentMesure(m_pointsMesure.front(), p);
+    afficherBulle(texteMesure(m_pointsMesure.front(), p, true));
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::ajouterPointMesure(const QPoint& ecran)
+{
+    m_contexte->MoveTo(ecran.x(), ecran.y(), m_vue, false);
+
+    gp_Pnt p;
+    bool   sommet = false;
+    if (!pointMesure(p, sommet))
+        return;
+
+    if (m_pointsMesure.size() >= 2)
+    {
+        effacerMesure(); // nouvelle mesure
+        masquerBulle();
+    }
+
+    m_pointsMesure.push_back(p);
+
+    Handle(AIS_Point) marqueur = new AIS_Point(new Geom_CartesianPoint(p));
+    marqueur->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
+    m_contexte->Display(marqueur, 0, -1, false);
+    m_marqueursMesure.push_back(marqueur);
+
+    if (m_pointsMesure.size() == 1)
+    {
+        emit messageApercu(tr("Mesure : premier point posé. Cliquez sur le second point."));
+    }
+    else
+    {
+        masquerBulle();
+        dessinerSegmentMesure(m_pointsMesure[0], m_pointsMesure[1]);
+        emit mesureEffectuee(texteMesure(m_pointsMesure[0], m_pointsMesure[1], true));
+    }
+    m_dernierSurvol.Nullify();
+    m_contexte->UpdateCurrentViewer();
+}
+
 void ViewerWidget::keyPressEvent(QKeyEvent* evenement)
 {
+    if (m_mesureActive && evenement->key() == Qt::Key_Escape)
+    {
+        if (!m_pointsMesure.empty())
+        {
+            effacerMesure();
+            masquerBulle();
+            m_contexte->UpdateCurrentViewer();
+            emit messageApercu(tr("Mesure : cliquez sur un premier point. Échap pour quitter l'outil."));
+        }
+        else
+        {
+            arreterMesure();
+        }
+        return;
+    }
     if (m_esquisseActive)
     {
         const QString t = evenement->text();

@@ -635,6 +635,20 @@ const Entree kTableAnglais[] = {
      "This value is not possible for this profile."},
     {"Aucune cote à cet endroit : double-cliquez sur le nombre d'une cote (%1 cote(s) affichée(s)).",
      "No dimension here: double-click the number of a dimension (%1 shown)."},
+    {"Mesurer",
+     "Measure"},
+    {"Mesurer la distance entre deux points (D) : cliquez sur deux sommets, arêtes ou faces",
+     "Measure the distance between two points (D): click two vertices, edges or faces"},
+    {"%1 mm",
+     "%1 mm"},
+    {"Distance %1 mm  (dX %2 · dY %3 · dZ %4)",
+     "Distance %1 mm  (dX %2 · dY %3 · dZ %4)"},
+    {"Mesure : cliquez sur un premier point (sommet, arête ou face), puis sur un second. Échap pour effacer puis quitter.",
+     "Measure: click a first point (vertex, edge or face), then a second one. Esc to clear, then quit."},
+    {"Mesure : premier point posé. Cliquez sur le second point.",
+     "Measure: first point set. Click the second point."},
+    {"Mesure : cliquez sur un premier point. Échap pour quitter l'outil.",
+     "Measure: click a first point. Esc to leave the tool."},
 };
 const int kNombreAnglais = sizeof(kTableAnglais) / sizeof(kTableAnglais[0]);
 } // namespace traduction

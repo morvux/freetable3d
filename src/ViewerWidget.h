@@ -21,7 +21,9 @@
 #include <QWidget>
 
 #include <AIS_InteractiveContext.hxx>
+#include <AIS_Point.hxx>
 #include <AIS_Shape.hxx>
+#include <AIS_TextLabel.hxx>
 #include <Bnd_Box.hxx>
 #include <SelectMgr_EntityOwner.hxx>
 #include <TopoDS_Shape.hxx>
@@ -115,6 +117,12 @@ public:
     // Sélectionne plusieurs pièces entières (mode Pièce). N'émet pas de signal.
     void selectionnerPieces(const std::vector<int>& ids);
 
+    // --- Mesure de distance ---
+    // Quand l'outil est actif, deux clics (sommet, arête ou face) donnent la distance entre les
+    // deux points. Un troisième clic recommence une mesure ; Échap efface puis quitte.
+    void definirOutilMesure(bool actif);
+    bool outilMesureActif() const { return m_mesureActive; }
+
     // --- Esquisse 2D ---
     // Démarre une esquisse sur le plan passant par « origine » de normale « normale » :
     // la vue se place face au plan, et les clics ajoutent des points aimantés dans ce plan.
@@ -132,6 +140,12 @@ public:
 signals:
     // Émis quand l'utilisateur change la sélection à la souris.
     void selectionChangee();
+
+    // Une mesure vient d'être faite (texte complet pour la barre d'état).
+    void mesureEffectuee(const QString& texte);
+
+    // L'outil de mesure s'est arrêté de lui-même (changement de mode, esquisse, Échap).
+    void outilMesureArrete();
 
     // Une pièce (ou plusieurs) vient d'être déplacée à la souris de (dx, dy) mm.
     void deplacementTermine(const QVector<int>& ids, double dx, double dy);
@@ -251,6 +265,17 @@ private:
     void masquerBulle();
     void appliquerSurvol(const QPoint& position);
 
+    // --- Mesure ---
+    void    activerModesMesure();
+    void    arreterMesure();
+    void    effacerMesure();
+    void    retirerSegmentMesure();
+    bool    pointMesure(gp_Pnt& point, bool& sommet) const;
+    void    ajouterPointMesure(const QPoint& ecran);
+    void    mettreAJourApercuMesure();
+    void    dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b);
+    QString texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail) const;
+
     Handle(V3d_Viewer)             m_viewer;
     Handle(V3d_View)               m_vue;
     Handle(AIS_InteractiveContext) m_contexte;
@@ -312,4 +337,11 @@ private:
     QElapsedTimer             m_horlogeSurvol;            // limite la cadence du survol
     QTimer*                   m_minuterieSurvol = nullptr; // applique le dernier survol en attente
     QPoint                    m_survolEnAttente;
+
+    // Mesure de distance
+    bool                                    m_mesureActive = false;
+    std::vector<gp_Pnt>                     m_pointsMesure;
+    std::vector<Handle(AIS_Point)>          m_marqueursMesure;
+    Handle(AIS_Shape)                       m_ligneMesure;
+    Handle(AIS_TextLabel)                   m_texteMesure;
 };

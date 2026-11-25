@@ -449,6 +449,20 @@ void MainWindow::creerMenus()
     connect(aAPlat, &QAction::triggered, this, [this]() { poserFaceAPlat(); });
     barre->addAction(aAPlat);
 
+    QAction* aMesure = new QAction(tr("Mesurer"), this);
+    aMesure->setCheckable(true);
+    aMesure->setShortcut(QKeySequence("D"));
+    aMesure->setToolTip(tr("Mesurer la distance entre deux points (D) : cliquez sur deux sommets, arêtes ou faces"));
+    connect(aMesure, &QAction::toggled, this, [this, aMesure](bool actif) {
+        m_vue->definirOutilMesure(actif);
+        if (actif && !m_vue->outilMesureActif())
+            aMesure->setChecked(false); // refusé (esquisse en cours)
+    });
+    connect(m_vue, &ViewerWidget::outilMesureArrete, this, [aMesure]() { aMesure->setChecked(false); });
+    connect(m_vue, &ViewerWidget::mesureEffectuee, this,
+            [this](const QString& texte) { statusBar()->showMessage(texte); });
+    barre->addAction(aMesure);
+
     barre->addSeparator();
     barre->addAction(aDupliquer);
     barre->addAction(aSymetrie);
@@ -499,6 +513,7 @@ void MainWindow::creerMenus()
     aOutilRotation->setIcon(icones::creer("rotation"));
     aPlateau->setIcon(icones::creer("plateau"));
     aAPlat->setIcon(icones::creer("faceaplat"));
+    aMesure->setIcon(icones::creer("mesurer"));
     aTrou->setIcon(icones::creer("trou"));
     aDupliquer->setIcon(icones::creer("dupliquer"));
     aSymetrie->setIcon(icones::creer("symetrie"));

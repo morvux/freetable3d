@@ -97,6 +97,18 @@ bool dessiner(QPainter& p, const QString& nom)
         p.setBrush(QColor(0xff, 0x8a, 0x3d, 150));
         p.drawRect(QRectF(14, 30, 36, 20));
     }
+    else if (nom == "mesurer")
+    {
+        // Deux points reliés par un trait de cote avec butées
+        p.drawLine(12, 18, 12, 46);
+        p.drawLine(52, 18, 52, 46);
+        p.setPen(accent);
+        p.drawLine(12, 32, 52, 32);
+        p.drawLine(12, 32, 20, 26);
+        p.drawLine(12, 32, 20, 38);
+        p.drawLine(52, 32, 44, 26);
+        p.drawLine(52, 32, 44, 38);
+    }
     else if (nom == "conge")
     {
         p.drawPolyline(QPolygonF({{10, 52}, {10, 12}}));
