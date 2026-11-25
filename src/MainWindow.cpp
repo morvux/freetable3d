@@ -1161,6 +1161,17 @@ void MainWindow::verifierImpression()
     formulaire->addRow(tr("Plateau : largeur X"), px);
     formulaire->addRow(tr("Plateau : profondeur Y"), py);
     formulaire->addRow(tr("Hauteur maximale Z"), pz);
+
+    auto* paroiMin = new QDoubleSpinBox;
+    paroiMin->setRange(0.0, 50.0);
+    paroiMin->setDecimals(2);
+    paroiMin->setSingleStep(0.1);
+    paroiMin->setSuffix(QStringLiteral(" mm"));
+    paroiMin->setSpecialValueText(tr("Désactivé"));
+    paroiMin->setValue(reglages.value("controle/paroiMin", 1.2).toDouble());
+    paroiMin->setToolTip(tr("Épaisseur sous laquelle une paroi est signalée. Repère courant : 2 à 3 fois le "
+                            "diamètre de la buse (1,2 mm pour une buse de 0,4 mm)."));
+    formulaire->addRow(tr("Épaisseur minimale des parois"), paroiMin);
     mise->addLayout(formulaire);
     mise->addWidget(new QLabel(tr("Les pièces sélectionnées sont vérifiées, ou toutes s'il n'y a pas de sélection.")));
     auto* boutons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -1172,7 +1183,12 @@ void MainWindow::verifierImpression()
     reglages.setValue("plateau/x", px->value());
     reglages.setValue("plateau/y", py->value());
     reglages.setValue("plateau/z", pz->value());
+    reglages.setValue("controle/paroiMin", paroiMin->value());
     appliquerPlateau();
+    m_vue->effacerParoisFines();
+
+    std::vector<gp_Pnt> reperesFins;
+    double              tailleRepere = 0.5;
 
     const std::vector<int> ids = idsSelectionnes();
     const QLocale lieu;
@@ -1218,7 +1234,39 @@ void MainWindow::verifierImpression()
         else
             lignes << tr("✘ Trop grand pour le plateau (%1 × %2 × %3 mm)").arg(n(X, 0), n(Y, 0), n(Z, 0));
 
+        // Parois fines
+        if (paroiMin->value() > 0.0 && v.nbSolides > 0 && v.valide)
+        {
+            QApplication::setOverrideCursor(Qt::WaitCursor);
+            const modelisation::ParoisFines p = modelisation::controlerParois(piece.forme, paroiMin->value());
+            QApplication::restoreOverrideCursor();
+            if (!p.mesure)
+            {
+                lignes << tr("ℹ Épaisseur des parois non mesurable sur cette pièce");
+            }
+            else if (p.nbPointsFins > 0)
+            {
+                lignes << tr("⚠ Parois fines : épaisseur minimale %1 mm (seuil %2 mm), %3 point(s) repéré(s) en rouge")
+                              .arg(n(p.epaisseurMin, 2), n(paroiMin->value(), 2))
+                              .arg(p.nbPointsFins);
+                reperesFins.insert(reperesFins.end(), p.points.begin(), p.points.end());
+                tailleRepere = std::max(tailleRepere, 0.006 * std::sqrt(v.dx * v.dx + v.dy * v.dy + v.dz * v.dz));
+            }
+            else
+            {
+                lignes << tr("✔ Parois assez épaisses (plus fine mesurée : %1 mm, seuil %2 mm)")
+                              .arg(n(p.epaisseurMin, 2), n(paroiMin->value(), 2));
+            }
+        }
+
         rapport << lignes.join("<br>");
+    }
+
+    if (!reperesFins.empty())
+    {
+        m_vue->afficherParoisFines(reperesFins, tailleRepere);
+        rapport << tr("<i>Les repères rouges montrent les parois trop fines (Échap pour les effacer). "
+                      "Contrôle par échantillonnage : un détail minuscule peut passer inaperçu.</i>");
     }
 
     QMessageBox::information(this, tr("Vérifier pour l'impression"), rapport.join("<br><br>"));

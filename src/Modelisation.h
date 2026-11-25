@@ -131,6 +131,19 @@ struct Verification
 };
 Verification verifier(const TopoDS_Shape& forme);
 
+// Contrôle de l'épaisseur des parois : depuis des points répartis sur chaque face, on envoie un
+// rayon vers l'intérieur de la matière et on mesure la distance jusqu'à la face opposée.
+// C'est une estimation par échantillonnage : un détail plus petit que l'écart entre les points
+// peut passer inaperçu.
+struct ParoisFines
+{
+    bool                mesure = false;       // au moins une épaisseur a pu être mesurée
+    double              epaisseurMin = 0.0;   // plus petite épaisseur mesurée (mm)
+    int                 nbPointsFins = 0;     // points dont l'épaisseur est sous le seuil
+    std::vector<gp_Pnt> points;               // quelques-uns de ces points (limités), pour les repérer
+};
+ParoisFines controlerParois(const TopoDS_Shape& forme, double seuil);
+
 // Transformation (rotations puis translation) que « transformer » applique à cette forme :
 // utile pour mémoriser le placement d'une pièce paramétrique.
 gp_Trsf matriceTransformation(const TopoDS_Shape& forme,

@@ -31,6 +31,13 @@
 #include <TopExp.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepClass_FaceClassifier.hxx>
+#include <BRepGProp_Face.hxx>
+#include <BRepTools.hxx>
+#include <IntCurvesFace_ShapeIntersector.hxx>
+#include <TopAbs_State.hxx>
+#include <gp_Lin.hxx>
+#include <gp_Pnt2d.hxx>
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -1168,6 +1175,107 @@ Verification verifier(const TopoDS_Shape& forme)
         v.dz = z1 - z0;
     }
     return v;
+}
+
+ParoisFines controlerParois(const TopoDS_Shape& forme, double seuil)
+{
+    ParoisFines resultat;
+    if (forme.IsNull())
+        return resultat;
+
+    try
+    {
+        Bnd_Box boite;
+        BRepBndLib::Add(forme, boite, false);
+        if (boite.IsVoid())
+            return resultat;
+        const double diagonale = std::sqrt(boite.SquareExtent());
+
+        int nbFaces = 0;
+        for (TopExp_Explorer ex(forme, TopAbs_FACE); ex.More(); ex.Next())
+            ++nbFaces;
+        if (nbFaces == 0)
+            return resultat;
+
+        // Nombre de points par côté de face : moins quand il y a beaucoup de faces (temps de calcul)
+        const int n = std::max(3, std::min(12, static_cast<int>(std::sqrt(30000.0 / nbFaces))));
+
+        IntCurvesFace_ShapeIntersector intersecteur;
+        intersecteur.Load(forme, 1e-6);
+
+        const double decalage = 1e-3; // départ du rayon juste sous la surface, dans la matière
+        double      mini = 1e100;
+        constexpr std::size_t maxPoints = 300;
+        std::vector<gp_Pnt> fins;
+
+        for (TopExp_Explorer ex(forme, TopAbs_FACE); ex.More(); ex.Next())
+        {
+            const TopoDS_Face face = TopoDS::Face(ex.Current());
+            double u0, u1, v0, v1;
+            BRepTools::UVBounds(face, u0, u1, v0, v1);
+            if (!(u1 - u0 > 1e-9) || !(v1 - v0 > 1e-9) || (u1 - u0) > 1e8 || (v1 - v0) > 1e8)
+                continue;
+
+            BRepGProp_Face proprietes(face);
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = 0; j < n; ++j)
+                {
+                    const double u = u0 + (u1 - u0) * (i + 0.5) / n;
+                    const double v = v0 + (v1 - v0) * (j + 0.5) / n;
+
+                    BRepClass_FaceClassifier classeur(face, gp_Pnt2d(u, v), 1e-7);
+                    if (classeur.State() != TopAbs_IN)
+                        continue;
+
+                    gp_Pnt point;
+                    gp_Vec normale;
+                    proprietes.Normal(u, v, point, normale);
+                    if (normale.Magnitude() < 1e-12)
+                        continue;
+                    normale.Normalize();
+
+                    const gp_Dir  vers_matiere(-normale.X(), -normale.Y(), -normale.Z());
+                    const gp_Pnt  depart = point.Translated(gp_Vec(vers_matiere) * decalage);
+                    intersecteur.PerformNearest(gp_Lin(depart, vers_matiere), 0.0, 2.0 * diagonale);
+                    if (intersecteur.NbPnt() < 1)
+                        continue;
+
+                    const double epaisseur = intersecteur.WParameter(1) + decalage;
+                    if (epaisseur < 1e-6)
+                        continue;
+
+                    resultat.mesure = true;
+                    mini = std::min(mini, epaisseur);
+                    if (epaisseur < seuil)
+                    {
+                        ++resultat.nbPointsFins;
+                        fins.push_back(point);
+                    }
+                }
+            }
+        }
+
+        if (resultat.mesure)
+            resultat.epaisseurMin = mini;
+
+        // On ne garde qu'un échantillon régulier des points trop fins pour les afficher.
+        if (fins.size() <= maxPoints)
+        {
+            resultat.points = fins;
+        }
+        else
+        {
+            const double pas = static_cast<double>(fins.size()) / maxPoints;
+            for (std::size_t k = 0; k < maxPoints; ++k)
+                resultat.points.push_back(fins[static_cast<std::size_t>(k * pas)]);
+        }
+    }
+    catch (const Standard_Failure&)
+    {
+        // Mesure impossible sur cette forme : on rend ce qui a été trouvé
+    }
+    return resultat;
 }
 
 bool evider(const TopoDS_Shape& forme, const std::vector<TopoDS_Shape>& facesOuvertes,

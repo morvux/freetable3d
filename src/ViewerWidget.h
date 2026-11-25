@@ -9,6 +9,8 @@
 //  - glisser une FACE PLANE sélectionnée (mode Face) : l'étirer ou la rentrer
 //  - clic droit ou milieu + glisser : déplacer la vue ; molette : zoom
 
+#include <functional>
+#include <map>
 #include <vector>
 
 #include <QElapsedTimer>
@@ -25,6 +27,7 @@
 #include <AIS_Shape.hxx>
 #include <AIS_TextLabel.hxx>
 #include <Bnd_Box.hxx>
+#include <Quantity_Color.hxx>
 #include <SelectMgr_EntityOwner.hxx>
 #include <TopoDS_Shape.hxx>
 #include <V3d_View.hxx>
@@ -35,6 +38,7 @@
 #include <TopoDS_Wire.hxx>
 #include <gp_Vec.hxx>
 
+#include "AncragesMesure.h"
 #include "Document.h"
 #include "Esquisse.h"
 #include "CotesEsquisse.h"
@@ -116,6 +120,11 @@ public:
 
     // Sélectionne plusieurs pièces entières (mode Pièce). N'émet pas de signal.
     void selectionnerPieces(const std::vector<int>& ids);
+
+    // Repères rouges (petites sphères) sur les endroits où une paroi est trop fine.
+    // « rayon » = taille des repères en mm. Ils disparaissent avec Échap ou à la prochaine modification.
+    void afficherParoisFines(const std::vector<gp_Pnt>& points, double rayon);
+    void effacerParoisFines();
 
     // --- Mesure de distance ---
     // Quand l'outil est actif, deux clics (sommet, arête ou face) donnent la distance entre les
@@ -270,11 +279,22 @@ private:
     void    arreterMesure();
     void    effacerMesure();
     void    retirerSegmentMesure();
+    void    retirerMarqueurAccroche();
     bool    pointMesure(gp_Pnt& point, bool& sommet) const;
+    // Point d'accroche (sommet, milieu, centre...) ou point libre sous le curseur ; « libre » = pas d'accroche.
+    bool    chercherAccroche(const QPoint& ecran, ancrage::Ancrage& choix, bool& libre) const;
     void    ajouterPointMesure(const QPoint& ecran);
-    void    mettreAJourApercuMesure();
+    void    mettreAJourApercuMesure(const QPoint& ecran);
     void    dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b);
+    void    redessinerMesure();
+    void    afficherMarqueur(Handle(AIS_Point)& marqueur, const gp_Pnt& p, const Quantity_Color& couleur);
+    // La mesure suit la géométrie : après une modification du document, ou pendant un geste.
+    void    actualiserMesure(const Document& document);
+    void    memoriserPositionsMesure();
+    void    suivreMesureRigide();
+    void    suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance);
     QString texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail) const;
+    static QString nomAccroche(ancrage::Genre genre);
 
     Handle(V3d_Viewer)             m_viewer;
     Handle(V3d_View)               m_vue;
@@ -340,8 +360,14 @@ private:
 
     // Mesure de distance
     bool                                    m_mesureActive = false;
-    std::vector<gp_Pnt>                     m_pointsMesure;
+    std::vector<ancrage::Ancrage>           m_ancragesMesure;    // 0, 1 ou 2 points mesurés
+    std::map<int, TopoDS_Shape>             m_formesMesure;      // forme des pièces mesurées, à la dernière mise à jour
+    std::vector<gp_Pnt>                     m_positionsAvantGeste;
+    std::map<int, gp_Pnt>                   m_centresPieces;     // cache des centres de gravité
+    Handle(AIS_Point)                       m_marqueurAccroche;  // repère vert du point d'accroche visé
     std::vector<Handle(AIS_Point)>          m_marqueursMesure;
     Handle(AIS_Shape)                       m_ligneMesure;
     Handle(AIS_TextLabel)                   m_texteMesure;
+
+    Handle(AIS_Shape)                       m_paroisFines;
 };

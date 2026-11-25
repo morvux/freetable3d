@@ -30,8 +30,11 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRep_Builder.hxx>
 #include <BRep_Tool.hxx>
+#include <Graphic3d_Camera.hxx>
+#include <Graphic3d_ZLayerId.hxx>
 #include <Geom_CartesianPoint.hxx>
 #include <SelectMgr_ViewerSelector.hxx>
 #include <TCollection_ExtendedString.hxx>
@@ -236,7 +239,8 @@ int ViewerWidget::idPieceDe(const Handle(AIS_InteractiveObject)& objet) const
 
 void ViewerWidget::afficherDocument(const Document& document)
 {
-    effacerMesure(); // la géométrie change : les points mesurés ne valent plus
+    effacerParoisFines();
+    m_centresPieces.clear();
     m_dernierSurvol.Nullify();
     for (const ObjetAffiche& affiche : m_objets)
         m_contexte->Remove(affiche.objet, false);
@@ -258,6 +262,7 @@ void ViewerWidget::afficherDocument(const Document& document)
     }
     if (m_mesureActive)
         activerModesMesure();
+    actualiserMesure(document); // la mesure suit les pièces déplacées ou modifiées
     m_contexte->UpdateCurrentViewer();
 }
 
@@ -589,6 +594,7 @@ void ViewerWidget::mettreAJourDeplacement(const QPoint& ecran)
     translation.SetTranslation(gp_Vec(m_dx, m_dy, 0.0));
     for (const Handle(AIS_Shape)& objet : m_objetsDeplaces)
         objet->SetLocalTransformation(translation);
+    suivreMesureRigide();
     m_contexte->UpdateCurrentViewer();
 
     auto n = [](double v) { return QString::number(v == 0.0 ? 0.0 : v, 'f', 2); };
@@ -609,6 +615,7 @@ void ViewerWidget::mettreAJourEtirement(const QPoint& ecran)
     m_distance = distance;
     m_objetEtire->SetShape(modelisation::etirerFace(m_formeInitiale, m_faceEtiree, distance));
     m_contexte->Redisplay(m_objetEtire, true);
+    suivreMesureEtirement(m_objetEtire->Shape(), distance);
 
     const modelisation::Mesures m = modelisation::mesurer(m_objetEtire->Shape());
     QString dimensions;
@@ -673,6 +680,7 @@ void ViewerWidget::mettreAJourOrientation(const QPoint& ecran)
         rotation.SetRotation(gp_Ax1(m_centresDeplaces[i], direction), m_angle * pi / 180.0);
         m_objetsDeplaces[i]->SetLocalTransformation(rotation);
     }
+    suivreMesureRigide();
     m_contexte->UpdateCurrentViewer();
 
     annoncerGeste(tr("Rotation autour de %1 : %2°")
@@ -866,6 +874,7 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
                 if ((position - m_positionPression).manhattanLength() <= 4)
                     return;
                 m_gesteDemarre = true;
+                memoriserPositionsMesure();
 
                 if (m_geste == Geste::Etirement)
                 {
@@ -949,7 +958,7 @@ void ViewerWidget::appliquerSurvol(const QPoint& position)
         m_contexte->UpdateCurrentViewer();
     }
     if (m_mesureActive)
-        mettreAJourApercuMesure();
+        mettreAJourApercuMesure(position);
 }
 
 void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
@@ -1817,6 +1826,35 @@ void ViewerWidget::activerModesMesure()
     }
 }
 
+void ViewerWidget::afficherParoisFines(const std::vector<gp_Pnt>& points, double rayon)
+{
+    effacerParoisFines();
+    if (points.empty())
+    {
+        m_contexte->UpdateCurrentViewer();
+        return;
+    }
+
+    BRep_Builder    constructeur;
+    TopoDS_Compound reperes;
+    constructeur.MakeCompound(reperes);
+    for (const gp_Pnt& p : points)
+        constructeur.Add(reperes, BRepPrimAPI_MakeSphere(p, std::max(rayon, 0.05)).Shape());
+
+    m_paroisFines = new AIS_Shape(reperes);
+    m_paroisFines->SetColor(Quantity_Color(0.95, 0.10, 0.10, Quantity_TOC_RGB));
+    m_contexte->Display(m_paroisFines, AIS_Shaded, -1, false);
+    m_contexte->UpdateCurrentViewer();
+}
+
+void ViewerWidget::effacerParoisFines()
+{
+    if (m_paroisFines.IsNull())
+        return;
+    m_contexte->Remove(m_paroisFines, false);
+    m_paroisFines.Nullify();
+}
+
 void ViewerWidget::definirOutilMesure(bool actif)
 {
     if (actif == m_mesureActive)
@@ -1833,15 +1871,20 @@ void ViewerWidget::definirOutilMesure(bool actif)
 
     m_contexte->ClearSelected(false);
     m_mesureActive = true;
-    m_pointsMesure.clear();
+    if (m_ancragesMesure.size() >= 2)
+        effacerMesure(); // on repart d'une mesure vierge
     m_dernierSurvol.Nullify();
     m_contexte->SetPixelTolerance(5); // viser un sommet doit rester facile
     activerModesMesure();
+    // Pendant la mesure, le survol n'est plus rempli mais seulement dessiné en contour :
+    // une face pleine en surbrillance recouvrirait le trait de mesure posé sur elle.
+    m_contexte->HighlightStyle(Prs3d_TypeOfHighlight_Dynamic)->SetDisplayMode(AIS_WireFrame);
+    m_contexte->HighlightStyle(Prs3d_TypeOfHighlight_LocalDynamic)->SetDisplayMode(AIS_WireFrame);
     setCursor(Qt::CrossCursor);
     m_contexte->UpdateCurrentViewer();
     emit selectionChangee();
-    emit messageApercu(tr("Mesure : cliquez sur un premier point (sommet, arête ou face), puis sur un second. "
-                          "Échap pour effacer puis quitter."));
+    emit messageApercu(tr("Mesure : cliquez sur un premier point (sommet, milieu d'arête, centre de face, "
+                          "de cercle ou de pièce), puis sur un second. Échap pour effacer puis quitter."));
 }
 
 void ViewerWidget::arreterMesure()
@@ -1849,11 +1892,17 @@ void ViewerWidget::arreterMesure()
     if (!m_mesureActive)
         return;
     m_mesureActive = false;
-    effacerMesure();
+    // Une mesure terminée reste affichée et suit la pièce quand on la déplace ou l'étire ;
+    // un premier point resté seul est abandonné.
+    if (m_ancragesMesure.size() < 2)
+        effacerMesure();
+    retirerMarqueurAccroche();
     masquerBulle();
     unsetCursor();
     m_dernierSurvol.Nullify();
     m_contexte->SetPixelTolerance(m_mode == ModeSelection::Face ? 1 : 2);
+    m_contexte->HighlightStyle(Prs3d_TypeOfHighlight_Dynamic)->SetDisplayMode(AIS_Shaded);
+    m_contexte->HighlightStyle(Prs3d_TypeOfHighlight_LocalDynamic)->SetDisplayMode(AIS_Shaded);
 
     for (const ObjetAffiche& affiche : m_objets)
     {
@@ -1880,13 +1929,49 @@ void ViewerWidget::retirerSegmentMesure()
     }
 }
 
+void ViewerWidget::retirerMarqueurAccroche()
+{
+    if (!m_marqueurAccroche.IsNull())
+    {
+        m_contexte->Remove(m_marqueurAccroche, false);
+        m_marqueurAccroche.Nullify();
+    }
+}
+
 void ViewerWidget::effacerMesure()
 {
     retirerSegmentMesure();
+    retirerMarqueurAccroche();
     for (const Handle(AIS_Point)& marqueur : m_marqueursMesure)
         m_contexte->Remove(marqueur, false);
     m_marqueursMesure.clear();
-    m_pointsMesure.clear();
+    m_ancragesMesure.clear();
+    m_formesMesure.clear();
+    m_positionsAvantGeste.clear();
+}
+
+QString ViewerWidget::nomAccroche(ancrage::Genre genre)
+{
+    switch (genre)
+    {
+    case ancrage::Genre::Sommet:       return QObject::tr("Sommet");
+    case ancrage::Genre::MilieuArete:  return QObject::tr("Milieu d'arête");
+    case ancrage::Genre::CentreCercle: return QObject::tr("Centre du cercle");
+    case ancrage::Genre::CentreFace:   return QObject::tr("Centre de la face");
+    case ancrage::Genre::CentrePiece:  return QObject::tr("Centre de la pièce");
+    default:                           break;
+    }
+    return QString();
+}
+
+void ViewerWidget::afficherMarqueur(Handle(AIS_Point)& marqueur, const gp_Pnt& p, const Quantity_Color& couleur)
+{
+    if (!marqueur.IsNull())
+        m_contexte->Remove(marqueur, false);
+    marqueur = new AIS_Point(new Geom_CartesianPoint(p));
+    marqueur->SetColor(couleur);
+    m_contexte->Display(marqueur, 0, -1, false);
+    m_contexte->SetZLayer(marqueur, Graphic3d_ZLayerId_Topmost);
 }
 
 bool ViewerWidget::pointMesure(gp_Pnt& point, bool& sommet) const
@@ -1921,6 +2006,66 @@ bool ViewerWidget::pointMesure(gp_Pnt& point, bool& sommet) const
     return false;
 }
 
+bool ViewerWidget::chercherAccroche(const QPoint& ecran, ancrage::Ancrage& choix, bool& libre) const
+{
+    libre = false;
+    if (!m_contexte->HasDetected())
+        return false;
+
+    const Handle(StdSelect_BRepOwner) brep = Handle(StdSelect_BRepOwner)::DownCast(m_contexte->DetectedOwner());
+    if (brep.IsNull() || !brep->HasShape())
+        return false;
+    const Handle(AIS_Shape) objet = Handle(AIS_Shape)::DownCast(brep->Selectable());
+    if (objet.IsNull())
+        return false;
+    const int id = idPieceDe(objet);
+    if (id == 0)
+        return false;
+
+    const TopoDS_Shape piece   = objet->Shape();
+    const TopoDS_Shape element = brep->Shape();
+
+    auto cache = m_centresPieces.find(id);
+    if (cache == m_centresPieces.end())
+        cache = const_cast<ViewerWidget*>(this)->m_centresPieces.emplace(id, ancrage::centreDePiece(piece)).first;
+
+    // Candidats : celui qui est le plus près du curseur, à l'écran, dans un rayon de 14 pixels.
+    constexpr double rayonPixels = 14.0;
+    double           meilleur    = rayonPixels * rayonPixels;
+    bool             trouve      = false;
+    for (const ancrage::Ancrage& c : ancrage::candidats(piece, element, id, &cache->second))
+    {
+        Standard_Integer px = 0, py = 0;
+        m_vue->Convert(c.position.X(), c.position.Y(), c.position.Z(), px, py);
+        const double dx = px - ecran.x();
+        const double dy = py - ecran.y();
+        const double d  = dx * dx + dy * dy;
+        if (d < meilleur)
+        {
+            meilleur = d;
+            choix    = c;
+            trouve   = true;
+        }
+    }
+    if (trouve)
+        return true;
+
+    // Aucun point remarquable à proximité : point quelconque de la face ou de l'arête visée.
+    gp_Pnt p;
+    bool   sommet = false;
+    if (!pointMesure(p, sommet))
+        return false;
+    if (ancrage::surElement(piece, element, id, p, choix))
+    {
+        libre = true;
+        return true;
+    }
+    choix          = ancrage::Ancrage();
+    choix.position = p;
+    libre          = true;
+    return true;
+}
+
 QString ViewerWidget::texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail) const
 {
     const QLocale lieu;
@@ -1940,37 +2085,198 @@ void ViewerWidget::dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b)
     if (a.Distance(b) < 1e-7)
         return;
 
-    m_ligneMesure = new AIS_Shape(BRepBuilderAPI_MakeEdge(a, b).Edge());
-    m_ligneMesure->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
-    m_ligneMesure->SetWidth(2.5);
-    m_contexte->Display(m_ligneMesure, AIS_WireFrame, -1, false);
+    const Quantity_Color bleu(0.15, 0.50, 1.00, Quantity_TOC_RGB);
 
-    const gp_Pnt milieu((a.X() + b.X()) / 2.0, (a.Y() + b.Y()) / 2.0, (a.Z() + b.Z()) / 2.0);
+    m_ligneMesure = new AIS_Shape(BRepBuilderAPI_MakeEdge(a, b).Edge());
+    m_ligneMesure->SetColor(bleu);
+    m_ligneMesure->SetWidth(3.0);
+    m_contexte->Display(m_ligneMesure, AIS_WireFrame, -1, false);
+    // Couche supérieure : le trait reste visible même posé sur une face.
+    m_contexte->SetZLayer(m_ligneMesure, Graphic3d_ZLayerId_Topmost);
+
+    gp_Pnt milieu((a.X() + b.X()) / 2.0, (a.Y() + b.Y()) / 2.0, (a.Z() + b.Z()) / 2.0);
+
+    // Le texte est écarté du trait (environ 22 pixels), perpendiculairement à lui à l'écran,
+    // du côté « haut » de la vue, pour rester lisible.
+    {
+        const Handle(Graphic3d_Camera)& camera = m_vue->Camera();
+        const gp_Vec axe(a, b);
+        gp_Vec       lateral = axe.Crossed(gp_Vec(camera->Direction()));
+        if (lateral.Magnitude() < 1e-9 * (1.0 + axe.Magnitude()))
+            lateral = gp_Vec(camera->Up()); // trait pointé vers l'observateur
+        if (lateral.Magnitude() > 1e-12)
+        {
+            lateral.Normalize();
+            if (lateral.Dot(gp_Vec(camera->Up())) < 0.0)
+                lateral.Reverse();
+            milieu.Translate(lateral * m_vue->Convert(22));
+        }
+    }
+
     m_texteMesure = new AIS_TextLabel();
     m_texteMesure->SetPosition(milieu);
     m_texteMesure->SetText(TCollection_ExtendedString(texteMesure(a, b, false).toUtf8().constData(), true));
-    m_texteMesure->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
+    m_texteMesure->SetColor(bleu);
     m_texteMesure->SetHeight(18.0);
     m_contexte->Display(m_texteMesure, 0, -1, false);
+    m_contexte->SetZLayer(m_texteMesure, Graphic3d_ZLayerId_Topmost);
 }
 
-void ViewerWidget::mettreAJourApercuMesure()
+void ViewerWidget::redessinerMesure()
 {
-    // Après le premier point : un trait suit le curseur et la bulle donne la distance en direct.
-    if (m_pointsMesure.size() != 1)
+    // Repose les repères et le trait d'après la position actuelle des ancrages.
+    const Quantity_Color bleu(0.15, 0.50, 1.00, Quantity_TOC_RGB);
+    for (const Handle(AIS_Point)& marqueur : m_marqueursMesure)
+        m_contexte->Remove(marqueur, false);
+    m_marqueursMesure.clear();
+    for (const ancrage::Ancrage& a : m_ancragesMesure)
+    {
+        Handle(AIS_Point) marqueur;
+        afficherMarqueur(marqueur, a.position, bleu);
+        m_marqueursMesure.push_back(marqueur);
+    }
+    if (m_ancragesMesure.size() >= 2)
+        dessinerSegmentMesure(m_ancragesMesure[0].position, m_ancragesMesure[1].position);
+}
+
+void ViewerWidget::actualiserMesure(const Document& document)
+{
+    if (m_ancragesMesure.empty())
         return;
 
-    gp_Pnt p;
-    bool   sommet = false;
-    if (!pointMesure(p, sommet))
+    m_centresPieces.clear();
+    for (ancrage::Ancrage& a : m_ancragesMesure)
     {
-        retirerSegmentMesure();
-        masquerBulle();
-        m_contexte->UpdateCurrentViewer();
-        return;
+        if (a.idPiece == 0)
+            continue;
+        const Piece* piece = document.trouver(a.idPiece);
+        if (!piece)
+        {
+            a.genre   = ancrage::Genre::Libre; // la pièce a disparu : le point reste où il était
+            a.idPiece = 0;
+            continue;
+        }
+        const auto ancienne = m_formesMesure.find(a.idPiece);
+        ancrage::recaler(a, ancienne != m_formesMesure.end() ? ancienne->second : TopoDS_Shape(), piece->forme);
     }
-    dessinerSegmentMesure(m_pointsMesure.front(), p);
-    afficherBulle(texteMesure(m_pointsMesure.front(), p, true));
+
+    // Mémorise l'état actuel des pièces concernées pour la prochaine fois.
+    m_formesMesure.clear();
+    for (const ancrage::Ancrage& a : m_ancragesMesure)
+    {
+        if (a.idPiece == 0)
+            continue;
+        if (const Piece* piece = document.trouver(a.idPiece))
+            m_formesMesure[a.idPiece] = piece->forme;
+    }
+    redessinerMesure();
+}
+
+void ViewerWidget::memoriserPositionsMesure()
+{
+    // Au début d'un geste : positions de départ et forme de départ de chaque pièce mesurée.
+    m_positionsAvantGeste.clear();
+    for (const ancrage::Ancrage& a : m_ancragesMesure)
+        m_positionsAvantGeste.push_back(a.position);
+}
+
+void ViewerWidget::suivreMesureRigide()
+{
+    // Pendant un déplacement ou une rotation : les ancrages de la pièce bougent avec elle.
+    if (m_ancragesMesure.empty() || m_positionsAvantGeste.size() != m_ancragesMesure.size())
+        return;
+
+    for (std::size_t i = 0; i < m_ancragesMesure.size(); ++i)
+    {
+        ancrage::Ancrage& a = m_ancragesMesure[i];
+        if (a.idPiece == 0)
+            continue;
+        for (const ObjetAffiche& affiche : m_objets)
+        {
+            if (affiche.idPiece != a.idPiece)
+                continue;
+            if (std::find(m_objetsDeplaces.begin(), m_objetsDeplaces.end(), affiche.objet) == m_objetsDeplaces.end())
+                break;
+            a.position = m_positionsAvantGeste[i].Transformed(affiche.objet->LocalTransformation());
+            break;
+        }
+    }
+    redessinerMesure();
+}
+
+void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance)
+{
+    // Pendant l'étirement d'une face : un point situé sur cette face la suit, les autres
+    // restent attachés à leur élément dans la pièce modifiée.
+    if (m_ancragesMesure.empty() || m_positionsAvantGeste.size() != m_ancragesMesure.size())
+        return;
+
+    const gp_Pnt   pointFace = m_pointFace;
+    const gp_Vec   normale   = m_normaleFace;
+    const gp_Vec   decalage  = normale.Multiplied(distance);
+    const std::function<gp_Pnt(const gp_Pnt&)> prediction = [pointFace, normale, decalage](const gp_Pnt& p) {
+        const double hauteur = gp_Vec(pointFace, p).Dot(normale);
+        return std::abs(hauteur) < 1e-6 ? p.Translated(decalage) : p;
+    };
+
+    for (std::size_t i = 0; i < m_ancragesMesure.size(); ++i)
+    {
+        ancrage::Ancrage& a = m_ancragesMesure[i];
+        if (a.idPiece != m_idEtire)
+            continue;
+        a.position = m_positionsAvantGeste[i];
+        ancrage::recaler(a, m_formeInitiale, nouvelle, prediction);
+    }
+    redessinerMesure();
+}
+
+void ViewerWidget::mettreAJourApercuMesure(const QPoint& ecran)
+{
+    // Accroche : un repère vert montre le point remarquable visé. Après le premier point,
+    // un trait bleu suit le curseur et la bulle donne la distance en direct.
+    ancrage::Ancrage choix;
+    bool             libre = false;
+    const bool       trouve = chercherAccroche(ecran, choix, libre);
+
+    if (trouve && !libre)
+        afficherMarqueur(m_marqueurAccroche, choix.position, Quantity_Color(0.10, 0.80, 0.25, Quantity_TOC_RGB));
+    else
+        retirerMarqueurAccroche();
+
+    const QString nom = (trouve && !libre) ? nomAccroche(choix.genre) : QString();
+
+    if (m_ancragesMesure.size() == 1)
+    {
+        const gp_Pnt& depart = m_ancragesMesure.front().position;
+        gp_Pnt        p;
+        if (trouve)
+        {
+            p = choix.position;
+        }
+        else
+        {
+            // Hors des pièces : point du rayon de visée le plus proche du premier point
+            gp_Pnt origine;
+            gp_Vec direction;
+            if (!rayonSousCurseur(ecran, origine, direction) || direction.SquareMagnitude() < 1e-18)
+                return;
+            const double t = gp_Vec(origine, depart).Dot(direction) / direction.SquareMagnitude();
+            p = origine.Translated(direction * t);
+        }
+        dessinerSegmentMesure(depart, p);
+        QString texte = texteMesure(depart, p, true);
+        if (!nom.isEmpty())
+            texte += QStringLiteral("\n") + nom;
+        afficherBulle(texte);
+    }
+    else if (!nom.isEmpty())
+    {
+        afficherBulle(nom);
+    }
+    else
+    {
+        masquerBulle();
+    }
     m_contexte->UpdateCurrentViewer();
 }
 
@@ -1978,33 +2284,38 @@ void ViewerWidget::ajouterPointMesure(const QPoint& ecran)
 {
     m_contexte->MoveTo(ecran.x(), ecran.y(), m_vue, false);
 
-    gp_Pnt p;
-    bool   sommet = false;
-    if (!pointMesure(p, sommet))
+    ancrage::Ancrage choix;
+    bool             libre = false;
+    if (!chercherAccroche(ecran, choix, libre))
         return;
 
-    if (m_pointsMesure.size() >= 2)
+    if (m_ancragesMesure.size() >= 2)
     {
         effacerMesure(); // nouvelle mesure
         masquerBulle();
     }
 
-    m_pointsMesure.push_back(p);
+    m_ancragesMesure.push_back(choix);
+    if (choix.idPiece != 0)
+    {
+        // Forme de la pièce à cet instant : sert à retrouver l'élément après une modification.
+        for (const ObjetAffiche& affiche : m_objets)
+        {
+            if (affiche.idPiece == choix.idPiece)
+                m_formesMesure[choix.idPiece] = affiche.objet->Shape();
+        }
+    }
+    retirerMarqueurAccroche();
+    redessinerMesure();
 
-    Handle(AIS_Point) marqueur = new AIS_Point(new Geom_CartesianPoint(p));
-    marqueur->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
-    m_contexte->Display(marqueur, 0, -1, false);
-    m_marqueursMesure.push_back(marqueur);
-
-    if (m_pointsMesure.size() == 1)
+    if (m_ancragesMesure.size() == 1)
     {
         emit messageApercu(tr("Mesure : premier point posé. Cliquez sur le second point."));
     }
     else
     {
         masquerBulle();
-        dessinerSegmentMesure(m_pointsMesure[0], m_pointsMesure[1]);
-        emit mesureEffectuee(texteMesure(m_pointsMesure[0], m_pointsMesure[1], true));
+        emit mesureEffectuee(texteMesure(m_ancragesMesure[0].position, m_ancragesMesure[1].position, true));
     }
     m_dernierSurvol.Nullify();
     m_contexte->UpdateCurrentViewer();
@@ -2014,7 +2325,7 @@ void ViewerWidget::keyPressEvent(QKeyEvent* evenement)
 {
     if (m_mesureActive && evenement->key() == Qt::Key_Escape)
     {
-        if (!m_pointsMesure.empty())
+        if (!m_ancragesMesure.empty())
         {
             effacerMesure();
             masquerBulle();
@@ -2025,6 +2336,14 @@ void ViewerWidget::keyPressEvent(QKeyEvent* evenement)
         {
             arreterMesure();
         }
+        return;
+    }
+    if (!m_mesureActive && !m_esquisseActive && evenement->key() == Qt::Key_Escape
+        && (!m_paroisFines.IsNull() || !m_ancragesMesure.empty()))
+    {
+        effacerParoisFines();
+        effacerMesure();
+        m_contexte->UpdateCurrentViewer();
         return;
     }
     if (m_esquisseActive)
