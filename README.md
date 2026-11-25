@@ -5,6 +5,8 @@ OpenCascade et Qt 6, pour Linux et Windows. Interface en français et en anglais
 
 Dépôt : https://github.com/morvux/freetable3d
 
+![Capture d'écran de FreeTable3D](docs/capture.png)
+
 ## Fonctions
 
 - Formes de base (cube, cylindre, sphère) et **esquisses** 2D (rectangle, cercle, polygone) avec cotes
