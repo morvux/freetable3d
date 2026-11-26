@@ -1244,6 +1244,8 @@ void ViewerWidget::mettreAJourApercu(const gp_Pnt2d& uv)
             m_objetApercu->SetColor(Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB));
             m_objetApercu->SetWidth(2.5);
             m_contexte->Display(m_objetApercu, AIS_WireFrame, -1, false);
+            // Couche supérieure : sinon la face sélectionnée (surbrillance) recouvre le trait
+            m_contexte->SetZLayer(m_objetApercu, Graphic3d_ZLayerId_Topmost);
         }
 
         const QLocale lieu;
@@ -1406,6 +1408,7 @@ void ViewerWidget::mettreAJourAffichageEsquisse()
         m_objetProfils->Attributes()->SetFaceBoundaryAspect(
             new Prs3d_LineAspect(Quantity_Color(0.2, 0.8, 1.0, Quantity_TOC_RGB), Aspect_TOL_SOLID, 2.5));
         m_contexte->Display(m_objetProfils, AIS_Shaded, -1, false);
+        m_contexte->SetZLayer(m_objetProfils, Graphic3d_ZLayerId_Topmost);
     }
     mettreAJourCotes();
     m_contexte->UpdateCurrentViewer();
@@ -1702,6 +1705,7 @@ void ViewerWidget::mettreAJourCotes()
         return;
     m_objetCotes = new CotesEsquisse(cotes);
     m_contexte->Display(m_objetCotes, 0, -1, false);
+    m_contexte->SetZLayer(m_objetCotes, Graphic3d_ZLayerId_Topmost);
 }
 
 namespace
