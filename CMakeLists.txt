@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(FreeTable3D VERSION 0.1.4 LANGUAGES CXX)
+project(FreeTable3D VERSION 0.1.5 LANGUAGES CXX)
 
 # Sans précision, on compile en Release (optimisé) : beaucoup plus fluide.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)

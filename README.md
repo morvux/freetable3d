@@ -31,18 +31,18 @@ Téléchargez le fichier correspondant à votre système depuis la page des
 
 Un seul fichier, sans installation, qui fonctionne sur la plupart des distributions récentes :
 
-    chmod +x FreeTable3D-0.1.4-x86_64.AppImage
-    ./FreeTable3D-0.1.4-x86_64.AppImage
+    chmod +x FreeTable3D-0.1.5-x86_64.AppImage
+    ./FreeTable3D-0.1.5-x86_64.AppImage
 
 Si l'AppImage ne se lance pas, il manque peut-être la bibliothèque FUSE :
 
     sudo apt install libfuse2        # sur les versions récentes : libfuse2t64
 
-Vous pouvez aussi la lancer sans FUSE : `./FreeTable3D-0.1.4-x86_64.AppImage --appimage-extract-and-run`.
+Vous pouvez aussi la lancer sans FUSE : `./FreeTable3D-0.1.5-x86_64.AppImage --appimage-extract-and-run`.
 
 ### Windows 11 : installateur
 
-Téléchargez `FreeTable3D-0.1.4-windows-setup.exe` et lancez-le. Windows peut afficher un
+Téléchargez `FreeTable3D-0.1.5-windows-setup.exe` et lancez-le. Windows peut afficher un
 avertissement (SmartScreen), car l'installateur n'est pas signé : cliquez sur « Informations
 complémentaires », puis « Exécuter quand même ».
 
