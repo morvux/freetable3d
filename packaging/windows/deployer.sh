@@ -19,7 +19,7 @@ cp LICENSE README.md packaging/windows/freetable3d.ico dist/
 cd dist
 
 # Qt : DLL, plugin d'affichage Windows (platforms/qwindows.dll), traductions
-windeployqt6 freetable3d.exe
+windeployqt6 --no-translations freetable3d.exe
 
 # Autres bibliothèques (OpenCascade, compilateur, etc.), pour l'exécutable et les plugins Qt
 for passe in 1 2; do
