@@ -180,6 +180,7 @@ protected:
     void paintEvent(QPaintEvent* evenement) override;
     void resizeEvent(QResizeEvent* evenement) override;
     void showEvent(QShowEvent* evenement) override;
+    void moveEvent(QMoveEvent* evenement) override;
     void mousePressEvent(QMouseEvent* evenement) override;
     void mouseMoveEvent(QMouseEvent* evenement) override;
     void mouseReleaseEvent(QMouseEvent* evenement) override;
@@ -210,6 +211,9 @@ private:
 
     // Resynchronise la vue OpenCascade avec la taille réelle de la fenêtre native.
     void ajusterVue();
+    void synchroniserFenetreNative();
+    void attacherFenetre();
+    bool m_fenetreAttachee = false;
     void ajusterGrilleFine();
 
     // Numéro de mode de sélection OpenCascade correspondant au mode courant.

@@ -17,7 +17,9 @@
 #include <QMouseEvent>
 #include <QObject>
 #include <QTimer>
+#include <QMoveEvent>
 #include <QWheelEvent>
+#include <QWindow>
 
 #include <AIS_SelectionScheme.hxx>
 #include <Aspect_DisplayConnection.hxx>
@@ -48,6 +50,7 @@
 #include <GProp_GProps.hxx>
 #include <GeomAbs_CurveType.hxx>
 #include <GeomAbs_SurfaceType.hxx>
+#include <Graphic3d_GraphicDriver.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <Aspect_GradientFillMethod.hxx>
 #include <Graphic3d_NameOfMaterial.hxx>
@@ -185,31 +188,9 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     configurerSurbrillance(Prs3d_TypeOfHighlight_Selected, orangeSelection, 2.0f);
     configurerSurbrillance(Prs3d_TypeOfHighlight_LocalSelected, orangeSelection, 2.0f);
 
-    // Vue rattachée à la fenêtre native de ce widget
+    // Vue : créée ici, mais rattachée à la fenêtre native seulement à l'affichage
+    // (voir attacherFenetre) : à ce moment le widget est enfin à sa place dans la fenêtre.
     m_vue = m_viewer->CreateView();
-#ifdef _WIN32
-    Handle(WNT_Window) fenetre = new WNT_Window(reinterpret_cast<Aspect_Handle>(winId()));
-#else
-    Handle(Xw_Window) fenetre = new Xw_Window(connexion, static_cast<Aspect_Drawable>(winId()));
-#endif
-    m_vue->SetWindow(fenetre);
-    if (!fenetre->IsMapped())
-        fenetre->Map();
-
-    // Fond en dégradé sombre, lissage des arêtes
-    m_vue->SetBackgroundColor(Quantity_Color(0.10, 0.12, 0.15, Quantity_TOC_RGB));
-    m_vue->SetBgGradientColors(Quantity_Color(0.20, 0.24, 0.30, Quantity_TOC_RGB),
-                               Quantity_Color(0.07, 0.08, 0.10, Quantity_TOC_RGB),
-                               Aspect_GFM_VER, false);
-    m_vue->ChangeRenderingParams().IsAntialiasingEnabled = true;
-#ifdef Q_OS_WIN
-    m_vue->ChangeRenderingParams().NbMsaaSamples = 2; // plus léger sur les cartes graphiques intégrées
-#else
-    m_vue->ChangeRenderingParams().NbMsaaSamples = 4;
-#endif
-    m_vue->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_WHITE, 0.08, V3d_ZBUFFER);
-    m_vue->SetProj(V3d_XposYnegZpos);
-    m_vue->MustBeResized();
 
     // Grille millimétrique de ±100 mm : lignes fines au mm, lignes marquées tous les 10 mm
     m_grille = new GrilleAxes(100, 1, 10);
@@ -337,6 +318,8 @@ void ViewerWidget::selectionnerPieces(const std::vector<int>& ids)
 
 void ViewerWidget::recadrer()
 {
+    if (!m_fenetreAttachee)
+        return; // sera fait au premier affichage
     // On cadre sur les pièces seules : la grille, plus grande, ne doit pas
     // empêcher de zoomer sur une petite pièce.
     Bnd_Box boite;
@@ -418,7 +401,7 @@ void ViewerWidget::selectionnerPiece(int idPiece)
 // seulement dans la zone visible (le nombre de segments reste petit).
 void ViewerWidget::ajusterGrilleFine()
 {
-    if (m_vue.IsNull() || m_grille.IsNull() || !m_contexte->IsDisplayed(m_grille))
+    if (m_vue.IsNull() || !m_fenetreAttachee || m_grille.IsNull() || !m_contexte->IsDisplayed(m_grille))
         return;
 
     Standard_Integer largeur = 0, hauteur = 0;
@@ -495,10 +478,69 @@ void ViewerWidget::ajusterGrilleFine()
         m_contexte->Redisplay(m_grille, false, true);
 }
 
-void ViewerWidget::ajusterVue()
+// Rattache la vue OpenCascade à la fenêtre native du widget. Appelé à l'affichage, quand la
+// fenêtre native existe et se trouve à sa place dans la fenêtre principale, et de nouveau si Qt
+// en change (QEvent::WinIdChange).
+void ViewerWidget::attacherFenetre()
 {
     if (m_vue.IsNull())
         return;
+
+#ifdef _WIN32
+    Handle(WNT_Window) fenetre = new WNT_Window(reinterpret_cast<Aspect_Handle>(winId()));
+#else
+    Handle(Aspect_DisplayConnection) connexion = m_viewer->Driver()->GetDisplayConnection();
+    Handle(Xw_Window) fenetre = new Xw_Window(connexion, static_cast<Aspect_Drawable>(winId()));
+#endif
+    m_vue->SetWindow(fenetre);
+    // Pas de Map() explicite : c'est Qt qui affiche la fenêtre native. L'afficher soi-même la
+    // rendait indépendante de la fenêtre principale dans certains environnements.
+
+    // Fond en dégradé sombre, lissage des arêtes
+    m_vue->SetBackgroundColor(Quantity_Color(0.10, 0.12, 0.15, Quantity_TOC_RGB));
+    m_vue->SetBgGradientColors(Quantity_Color(0.20, 0.24, 0.30, Quantity_TOC_RGB),
+                               Quantity_Color(0.07, 0.08, 0.10, Quantity_TOC_RGB),
+                               Aspect_GFM_VER, false);
+    m_vue->ChangeRenderingParams().IsAntialiasingEnabled = true;
+#ifdef Q_OS_WIN
+    m_vue->ChangeRenderingParams().NbMsaaSamples = 2; // plus léger sur les cartes graphiques intégrées
+#else
+    m_vue->ChangeRenderingParams().NbMsaaSamples = 4;
+#endif
+    m_vue->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_WHITE, 0.08, V3d_ZBUFFER);
+    m_vue->SetProj(V3d_XposYnegZpos);
+    m_vue->MustBeResized();
+    m_fenetreAttachee = true;
+}
+
+// La zone 3D est une fenêtre native (X11/Windows). Dans certains environnements (machine
+// virtuelle, gestionnaire de fenêtres sans composition...), sa position n'est pas toujours mise
+// à jour quand la mise en page change : elle déborde alors sur les barres d'outils.
+// On la recale donc explicitement sur l'emplacement du widget.
+void ViewerWidget::synchroniserFenetreNative()
+{
+    QWindow* fenetre = windowHandle();
+    if (!fenetre || !isVisible())
+        return;
+    QWidget* parentNatif = nativeParentWidget();
+    if (!parentNatif)
+        parentNatif = window();
+    const QRect voulu(mapTo(parentNatif, QPoint(0, 0)), size());
+    if (fenetre->geometry() != voulu)
+        fenetre->setGeometry(voulu);
+}
+
+void ViewerWidget::moveEvent(QMoveEvent*)
+{
+    synchroniserFenetreNative();
+}
+
+void ViewerWidget::ajusterVue()
+{
+    if (m_vue.IsNull() || !m_fenetreAttachee)
+        return;
+
+    synchroniserFenetreNative();
 
     m_vue->Window()->DoResize();
     m_vue->MustBeResized();
@@ -867,6 +909,9 @@ void ViewerWidget::leaveEvent(QEvent*)
 
 void ViewerWidget::paintEvent(QPaintEvent*)
 {
+    if (!m_fenetreAttachee)
+        return;
+    synchroniserFenetreNative();
     ajusterGrilleFine(); // la vue a pu changer autrement qu'à la souris (cadrage, saisie de valeur...)
     m_vue->Redraw();
 }
@@ -886,11 +931,15 @@ void ViewerWidget::resizeEvent(QResizeEvent*)
 
 void ViewerWidget::showEvent(QShowEvent*)
 {
+    if (!m_fenetreAttachee)
+        attacherFenetre();
     ajusterVue();
     // Une fois la mise en page terminée, on resynchronise une dernière fois
     // (et on cadre la vue au tout premier affichage).
     QTimer::singleShot(0, this, [this]() {
         ajusterVue();
+        // Seconde passe un peu plus tard : certains gestionnaires de fenêtres finissent la mise en page après
+        QTimer::singleShot(300, this, [this]() { ajusterVue(); });
         if (m_premierAffichage)
         {
             m_premierAffichage = false;
@@ -1895,6 +1944,14 @@ bool ViewerWidget::event(QEvent* evenement)
             evenement->accept();
             return true;
         }
+    }
+    // Qt a changé l'identifiant de la fenêtre native (réparentage...) : on rattache la vue à la nouvelle
+    if (evenement->type() == QEvent::WinIdChange && m_fenetreAttachee)
+    {
+        const bool resultat = QWidget::event(evenement);
+        attacherFenetre();
+        ajusterVue();
+        return resultat;
     }
     return QWidget::event(evenement);
 }
