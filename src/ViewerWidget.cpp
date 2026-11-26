@@ -429,9 +429,14 @@ void ViewerWidget::ajusterGrilleFine()
     int niveau = 0, cx = 0, cy = 0, demi = 0;
     const double mmParPixel = m_vue->Convert(1);
     // 1 mm fait au moins 30 px -> graduations au mm ; au moins 100 px -> lignes au 0,1 mm
-    // (donc des lignes au 0,1 mm espacées d'au moins 10 px, bien lisibles)
-    if (mmParPixel > 0.0 && mmParPixel <= 1.0 / 30.0)
-        niveau = (mmParPixel <= 1.0 / 100.0) ? 2 : 1;
+    // (donc des lignes au 0,1 mm espacées d'au moins 10 px, bien lisibles).
+    // Hystérésis : on change de niveau avec une marge, pour éviter le clignotement
+    // quand le zoom reste autour d'un seuil.
+    const int niveauActuel = m_grille->niveauDetail();
+    const double seuilMm = (niveauActuel >= 1) ? 1.0 / 25.0 : 1.0 / 30.0;
+    const double seuilDixiemes = (niveauActuel >= 2) ? 1.0 / 80.0 : 1.0 / 100.0;
+    if (mmParPixel > 0.0 && mmParPixel <= seuilMm)
+        niveau = (mmParPixel <= seuilDixiemes) ? 2 : 1;
 
     if (niveau > 0)
     {
@@ -457,11 +462,30 @@ void ViewerWidget::ajusterGrilleFine()
         }
         if (ok)
         {
-            cx = static_cast<int>(std::lround((xMin + xMax) / 20.0)) * 10; // recentrée par pas de 10 mm
-            cy = static_cast<int>(std::lround((yMin + yMax) / 20.0)) * 10;
-            const double rayon = std::max({std::abs(xMin - cx), std::abs(xMax - cx),
-                                           std::abs(yMin - cy), std::abs(yMax - cy)});
-            demi = static_cast<int>(std::ceil(std::min(rayon + 1.0, 80.0) / 5.0)) * 5;
+            // Fenêtre actuelle encore valable ? (zone visible incluse, et pas démesurée)
+            // -> on ne recalcule rien : plus de reconstruction à chaque cran de molette.
+            const int ancienCx = m_grille->centreX(), ancienCy = m_grille->centreY();
+            const int ancienDemi = m_grille->demiFenetre();
+            const double rayonVisible = std::max({xMax - xMin, yMax - yMin}) / 2.0;
+            if (niveauActuel >= 1 && ancienDemi > 0 && xMin >= ancienCx - ancienDemi
+                && xMax <= ancienCx + ancienDemi && yMin >= ancienCy - ancienDemi
+                && yMax <= ancienCy + ancienDemi && ancienDemi <= 4.0 * std::max(rayonVisible, 5.0))
+            {
+                cx = ancienCx;
+                cy = ancienCy;
+                demi = ancienDemi;
+            }
+            else
+            {
+                cx = static_cast<int>(std::lround((xMin + xMax) / 20.0)) * 10; // pas de 10 mm
+                cy = static_cast<int>(std::lround((yMin + yMax) / 20.0)) * 10;
+                const double rayon = std::max({std::abs(xMin - cx), std::abs(xMax - cx),
+                                               std::abs(yMin - cy), std::abs(yMax - cy)});
+                // Tailles de fenêtre en paliers (10, 20, 40, 80 mm) avec 50 % de marge
+                demi = 10;
+                while (demi < 80 && demi < rayon * 1.5)
+                    demi *= 2;
+            }
         }
         else
             niveau = 0;

@@ -33,6 +33,10 @@ public:
     //  - niveau 0 : rien de plus ; 1 : graduations au mm ; 2 : lignes au 0,1 mm + graduations au 0,1 mm
     // Renvoie true si l'état a changé (il faut alors réafficher la grille).
     bool definirDetail(int niveau, int cx, int cy, int demi);
+    int niveauDetail() const { return m_niveau; }
+    int centreX() const { return m_cx; }
+    int centreY() const { return m_cy; }
+    int demiFenetre() const { return m_demi; }
 
 private:
     int m_niveau = 0;
