@@ -348,6 +348,7 @@ void ViewerWidget::recadrer()
 
     m_vue->FitAll(boite, 0.1, false);
     m_vue->ZFitAll();
+    ajusterGrilleFine();
     m_vue->Redraw();
 }
 
@@ -411,6 +412,63 @@ void ViewerWidget::selectionnerPiece(int idPiece)
         }
     }
     m_contexte->UpdateCurrentViewer();
+}
+
+// Grille adaptative : selon le zoom, ajoute les graduations au mm puis les lignes au 0,1 mm,
+// seulement dans la zone visible (le nombre de segments reste petit).
+void ViewerWidget::ajusterGrilleFine()
+{
+    if (m_vue.IsNull() || m_grille.IsNull() || !m_contexte->IsDisplayed(m_grille))
+        return;
+
+    Standard_Integer largeur = 0, hauteur = 0;
+    m_vue->Window()->Size(largeur, hauteur);
+    if (largeur <= 0 || hauteur <= 0)
+        return;
+
+    int niveau = 0, cx = 0, cy = 0, demi = 0;
+    const double mmParPixel = m_vue->Convert(1);
+    // 1 mm fait au moins 30 px -> graduations au mm ; au moins 100 px -> lignes au 0,1 mm
+    // (donc des lignes au 0,1 mm espacées d'au moins 10 px, bien lisibles)
+    if (mmParPixel > 0.0 && mmParPixel <= 1.0 / 30.0)
+        niveau = (mmParPixel <= 1.0 / 100.0) ? 2 : 1;
+
+    if (niveau > 0)
+    {
+        // Les 4 coins de la vue projetés sur le plan Z = 0 : fenêtre exacte même en vue inclinée
+        const Standard_Integer coins[4][2] = {{0, 0}, {largeur, 0}, {0, hauteur}, {largeur, hauteur}};
+        double xMin = 1e30, xMax = -1e30, yMin = 1e30, yMax = -1e30;
+        bool ok = true;
+        for (const auto& coin : coins)
+        {
+            Standard_Real x, y, z, vx, vy, vz;
+            m_vue->ConvertWithProj(coin[0], coin[1], x, y, z, vx, vy, vz);
+            if (std::abs(vz) < 0.05)
+            {
+                ok = false;
+                break;
+            }
+            const double t = -z / vz;
+            const double px = x + t * vx, py = y + t * vy;
+            xMin = std::min(xMin, px);
+            xMax = std::max(xMax, px);
+            yMin = std::min(yMin, py);
+            yMax = std::max(yMax, py);
+        }
+        if (ok)
+        {
+            cx = static_cast<int>(std::lround((xMin + xMax) / 20.0)) * 10; // recentrée par pas de 10 mm
+            cy = static_cast<int>(std::lround((yMin + yMax) / 20.0)) * 10;
+            const double rayon = std::max({std::abs(xMin - cx), std::abs(xMax - cx),
+                                           std::abs(yMin - cy), std::abs(yMax - cy)});
+            demi = static_cast<int>(std::ceil(std::min(rayon + 1.0, 80.0) / 5.0)) * 5;
+        }
+        else
+            niveau = 0;
+    }
+
+    if (m_grille->definirDetail(niveau, cx, cy, demi))
+        m_contexte->Redisplay(m_grille, false, true);
 }
 
 void ViewerWidget::ajusterVue()
@@ -785,6 +843,7 @@ void ViewerWidget::leaveEvent(QEvent*)
 
 void ViewerWidget::paintEvent(QPaintEvent*)
 {
+    ajusterGrilleFine(); // la vue a pu changer autrement qu'à la souris (cadrage, saisie de valeur...)
     m_vue->Redraw();
 }
 
@@ -864,6 +923,7 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
         if (m_geste == Geste::Rotation)
         {
             m_vue->Rotation(position.x(), position.y());
+            ajusterGrilleFine();
         }
         else if (m_geste == Geste::Deplacement || m_geste == Geste::Orientation
                  || m_geste == Geste::Etirement)
@@ -897,6 +957,7 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
         m_vue->Pan(position.x() - m_dernierePosition.x(),
                    m_dernierePosition.y() - position.y());
         m_dernierePosition = position;
+        ajusterGrilleFine();
     }
     else
     {
@@ -1035,6 +1096,7 @@ void ViewerWidget::wheelEvent(QWheelEvent* evenement)
     m_vue->ZoomAtPoint(0, 0, delta, 0);
     if (std::abs(m_vue->Scale() - avant) <= 1e-9 * std::abs(avant))
         m_vue->SetScale(avant * std::pow(1.0015, delta));
+    ajusterGrilleFine();
     m_vue->Redraw();
     evenement->accept();
 }

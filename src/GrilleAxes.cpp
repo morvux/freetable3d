@@ -1,6 +1,10 @@
 #include "GrilleAxes.h"
 
+#include <algorithm>
+#include <cstdio>
 #include <vector>
+
+#include <TCollection_AsciiString.hxx>
 
 #include <Aspect_TypeOfLine.hxx>
 #include <Graphic3d_ArrayOfSegments.hxx>
@@ -100,6 +104,72 @@ void ajouterGraduations(const Handle(Prs3d_Presentation)& presentation, int demi
     etiquettes(Quantity_Color(0.55, 0.90, 0.55, Quantity_TOC_RGB), false);
 }
 
+// Lignes au 1/10 de mm (hors multiples du mm) dans la fenêtre [cx±demi] x [cy±demi].
+Handle(Graphic3d_ArrayOfSegments) lignesDixiemes(int cx, int cy, int demi, int demiTaille)
+{
+    const int xMin = std::max(cx - demi, -demiTaille), xMax = std::min(cx + demi, demiTaille);
+    const int yMin = std::max(cy - demi, -demiTaille), yMax = std::min(cy + demi, demiTaille);
+    if (xMin >= xMax || yMin >= yMax)
+        return Handle(Graphic3d_ArrayOfSegments)();
+
+    const int nx = (xMax - xMin) * 9, ny = (yMax - yMin) * 9;
+    Handle(Graphic3d_ArrayOfSegments) segments = new Graphic3d_ArrayOfSegments((nx + ny + 2) * 2);
+    for (int k = yMin * 10; k <= yMax * 10; ++k) // parallèles à X
+    {
+        if (k % 10 == 0)
+            continue;
+        const double y = k / 10.0;
+        segments->AddVertex(gp_Pnt(xMin, y, 0.0));
+        segments->AddVertex(gp_Pnt(xMax, y, 0.0));
+    }
+    for (int k = xMin * 10; k <= xMax * 10; ++k) // parallèles à Y
+    {
+        if (k % 10 == 0)
+            continue;
+        const double x = k / 10.0;
+        segments->AddVertex(gp_Pnt(x, yMin, 0.0));
+        segments->AddVertex(gp_Pnt(x, yMax, 0.0));
+    }
+    return segments;
+}
+
+// Graduations fines le long des axes, dans la fenêtre : pas en dixièmes de mm.
+void ajouterGraduationsFines(const Handle(Prs3d_Presentation)& presentation, int cx, int cy,
+                             int demi, int demiTaille, int pasDixiemes)
+{
+    auto etiquettes = [&](const Quantity_Color& couleur, bool surX) {
+        Handle(Prs3d_TextAspect) aspect = new Prs3d_TextAspect();
+        aspect->SetColor(couleur);
+        aspect->SetHeight(11.0);
+        aspect->SetHorizontalJustification(Graphic3d_HTA_CENTER);
+        aspect->SetVerticalJustification(Graphic3d_VTA_CENTER);
+
+        Handle(Graphic3d_Group) groupe = presentation->NewGroup();
+        groupe->SetGroupPrimitivesAspect(aspect->Aspect());
+        const int c = surX ? cx : cy;
+        const int debut = std::max(c - demi, -demiTaille) * 10;
+        const int fin = std::min(c + demi, demiTaille) * 10;
+        for (int k = (debut / pasDixiemes) * pasDixiemes; k <= fin; k += pasDixiemes)
+        {
+            if (k == 0 || k < debut)
+                continue;
+            if (k % 100 == 0) // multiples de 10 mm : déjà étiquetés
+                continue;
+            const double v = k / 10.0;
+            char tampon[32];
+            if (k % 10 == 0)
+                snprintf(tampon, sizeof tampon, "%d", k / 10);
+            else
+                snprintf(tampon, sizeof tampon, "%.1f", v);
+            const TCollection_ExtendedString texte(tampon);
+            const gp_Pnt position = surX ? gp_Pnt(v, -0.9, 0.0) : gp_Pnt(-1.2, v, 0.0);
+            Prs3d_Text::Draw(groupe, aspect, texte, position);
+        }
+    };
+    etiquettes(Quantity_Color(0.95, 0.55, 0.55, Quantity_TOC_RGB), true);
+    etiquettes(Quantity_Color(0.55, 0.90, 0.55, Quantity_TOC_RGB), false);
+}
+
 } // namespace
 
 GrilleAxes::GrilleAxes(int demiTaille, int pasMineur, int pasMajeur)
@@ -126,6 +196,16 @@ void GrilleAxes::Compute(const Handle(PrsMgr_PresentationManager)&,
     // Graduations numérotées (mm) le long des axes X et Y
     ajouterGraduations(presentation, m_demiTaille, m_pasMajeur);
 
+    // Détail au zoom : 0,1 mm (lignes + graduations) ou graduations au mm
+    if (m_niveau >= 2)
+    {
+        ajouterGroupe(presentation, lignesDixiemes(m_cx, m_cy, m_demi, m_demiTaille),
+                      Quantity_Color(0.10, 0.36, 0.42, Quantity_TOC_RGB), 1.0);
+    }
+    // Chiffres : uniquement les millimètres (pas de chiffres pour les dixièmes)
+    if (m_niveau >= 1)
+        ajouterGraduationsFines(presentation, m_cx, m_cy, m_demi, m_demiTaille, 10);
+
     // Axes : X rouge, Y vert, Z bleu
     const double d = m_demiTaille;
     ajouterAxe(presentation, gp_Pnt(-d, 0, 0), gp_Pnt(d, 0, 0),
@@ -134,6 +214,19 @@ void GrilleAxes::Compute(const Handle(PrsMgr_PresentationManager)&,
                Quantity_Color(0.30, 0.80, 0.30, Quantity_TOC_RGB));
     ajouterAxe(presentation, gp_Pnt(0, 0, -d), gp_Pnt(0, 0, d),
                Quantity_Color(0.30, 0.50, 1.00, Quantity_TOC_RGB));
+}
+
+bool GrilleAxes::definirDetail(int niveau, int cx, int cy, int demi)
+{
+    if (niveau == 0)
+        cx = cy = demi = 0;
+    if (niveau == m_niveau && cx == m_cx && cy == m_cy && demi == m_demi)
+        return false;
+    m_niveau = niveau;
+    m_cx = cx;
+    m_cy = cy;
+    m_demi = demi;
+    return true;
 }
 
 void GrilleAxes::ComputeSelection(const Handle(SelectMgr_Selection)&, const Standard_Integer)

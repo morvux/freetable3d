@@ -28,7 +28,17 @@ public:
     void ComputeSelection(const Handle(SelectMgr_Selection)& selection,
                           const Standard_Integer mode) override;
 
+    // Grille adaptative : quand on zoome, des lignes au 1/10 de mm apparaissent dans
+    // une fenêtre carrée centrée sur (cx, cy) de demi-côté « demi » (mm entiers).
+    //  - niveau 0 : rien de plus ; 1 : graduations au mm ; 2 : lignes au 0,1 mm + graduations au 0,1 mm
+    // Renvoie true si l'état a changé (il faut alors réafficher la grille).
+    bool definirDetail(int niveau, int cx, int cy, int demi);
+
 private:
+    int m_niveau = 0;
+    int m_cx = 0;
+    int m_cy = 0;
+    int m_demi = 0;
     int m_demiTaille;
     int m_pasMineur;
     int m_pasMajeur;

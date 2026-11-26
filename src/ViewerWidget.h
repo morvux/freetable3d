@@ -210,6 +210,7 @@ private:
 
     // Resynchronise la vue OpenCascade avec la taille réelle de la fenêtre native.
     void ajusterVue();
+    void ajusterGrilleFine();
 
     // Numéro de mode de sélection OpenCascade correspondant au mode courant.
     int modeOcct() const;
