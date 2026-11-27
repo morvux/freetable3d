@@ -46,19 +46,12 @@ Téléchargez `FreeTable3D-0.1.5-windows-setup.exe` et lancez-le. Windows peut a
 avertissement (SmartScreen), car l'installateur n'est pas signé : cliquez sur « Informations
 complémentaires », puis « Exécuter quand même ».
 
-### Signature numérique (Code signing policy)
+### Signature numérique
 
-Candidature en cours auprès de la SignPath Foundation. Une fois acceptée, l'installateur Windows
-sera signé ainsi :
-
-> Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
-
-- **Ce qui est signé** : l'installateur Windows et `freetable3d.exe`, fabriqués automatiquement par
-  GitHub Actions ([workflow](.github/workflows/windows.yml)) à partir de ce dépôt public.
-- **Rôles** : auteur, relecteur et approbateur de chaque signature : KREUDER Olivier
-  ([@morvux](https://github.com/morvux)). L'authentification à deux facteurs est activée.
-- **Vie privée** : FreeTable3D fonctionne entièrement en local et n'envoie aucune donnée.
-
+L'installateur Windows n'est pas encore signé numériquement : une demande de signature gratuite
+auprès de la SignPath Foundation a été refusée pour l'instant, car le projet est trop récent. Elle
+pourra être redéposée plus tard. L'installateur est fabriqué automatiquement par GitHub Actions
+([workflow](.github/workflows/windows.yml)) à partir de ce dépôt public, sans modification manuelle.
 Détails : [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
 
 ## Compilation (Debian / MX Linux)

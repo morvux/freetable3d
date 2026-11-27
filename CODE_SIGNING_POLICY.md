@@ -1,13 +1,17 @@
 # Politique de signature numérique / Code signing policy
 
-**Statut : candidature en préparation auprès de la SignPath Foundation.**
-Une fois la candidature acceptée, les installateurs Windows de FreeTable3D seront signés ainsi :
+**Statut : les installateurs ne sont pas signés pour l'instant.**
+Une demande de signature gratuite a été déposée auprès de la SignPath Foundation, puis refusée car le
+projet n'avait pas encore une notoriété suffisante. Elle pourra être redéposée quand le projet sera
+plus connu. Cette page décrit la politique prévue si une signature est mise en place.
+
+Si une signature SignPath est un jour accordée, les installateurs Windows seront signés ainsi :
 
 > Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org)
 
-Le certificat est délivré à la SignPath Foundation, qui est l'éditeur indiqué dans la signature.
+Le certificat serait alors délivré à la SignPath Foundation, qui est l'éditeur indiqué dans la signature.
 
-## Ce qui est signé
+## Ce qui serait signé
 
 - `FreeTable3D-<version>-windows-setup.exe` (installateur Windows) et l'exécutable `freetable3d.exe`
   qu'il contient.
@@ -38,7 +42,7 @@ FreeTable3D n'envoie aucune donnée à l'extérieur : le logiciel fonctionne ent
 
 ---
 
-*English summary:* Windows installers will be signed with a certificate issued to the SignPath
+*English summary:* Windows installers are currently NOT signed (a SignPath Foundation application was declined for lack of notability; it may be resubmitted later). If accepted, Windows installers would be signed with a certificate issued to the SignPath
 Foundation ("Free code signing provided by SignPath.io, certificate by SignPath Foundation"),
 built automatically by GitHub Actions from the public repository, with manual approval of each
 release by the project owner. FreeTable3D sends no data over the network.
