@@ -18,17 +18,19 @@ cp LICENSE README.md packaging/windows/freetable3d.ico dist/
 
 cd dist
 
-# Qt : DLL, plugin d'affichage Windows (platforms/qwindows.dll), traductions
+# Qt : DLL, plugin d'affichage Windows (platforms/qwindows.dll) ; pas de traductions Qt (l'application a les siennes)
 windeployqt6 --no-translations freetable3d.exe
 
 # Autres bibliothèques (OpenCascade, compilateur, etc.), pour l'exécutable et les plugins Qt
 for passe in 1 2; do
+    # Les « || true » évitent l'arrêt du script (set -e / pipefail) quand il n'y a plus rien à copier
+    # (grep sans résultat, ou cp -n qui renvoie une erreur pour un fichier déjà présent).
     find . \( -name '*.exe' -o -name '*.dll' \) -print0 \
-        | xargs -0 -n1 ldd 2>/dev/null \
-        | grep -i '/ucrt64/' \
+        | { xargs -0 -n1 ldd 2>/dev/null || true; } \
+        | { grep -i '/ucrt64/' || true; } \
         | awk '{print $3}' \
         | sort -u \
-        | xargs -I{} cp -n {} .
+        | { xargs -r -I{} sh -c 'cp -n "{}" . || true'; }
 done
 
 echo
