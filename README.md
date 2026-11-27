@@ -46,6 +46,12 @@ Téléchargez `FreeTable3D-0.1.5-windows-setup.exe` et lancez-le. Windows peut a
 avertissement (SmartScreen), car l'installateur n'est pas signé : cliquez sur « Informations
 complémentaires », puis « Exécuter quand même ».
 
+### Signature numérique
+
+L'installateur Windows est fabriqué automatiquement par GitHub Actions à partir de ce dépôt.
+La politique de signature (candidature SignPath Foundation en cours) est décrite dans
+[CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
+
 ## Compilation (Debian / MX Linux)
 
 Dépendances :
