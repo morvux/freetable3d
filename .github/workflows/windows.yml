@@ -1,0 +1,52 @@
+# Construit l'installateur Windows de FreeTable3D sur GitHub, depuis les sources du dépôt.
+# Déclenchement : à la main (onglet Actions > « Installateur Windows » > Run workflow)
+# ou en poussant une étiquette de version (v0.1.5, ...).
+# Le résultat est disponible en « Artifacts » de l'exécution.
+name: Installateur Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Récupérer les sources
+        uses: actions/checkout@v4
+
+      - name: Installer MSYS2 (UCRT64) et les dépendances
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-opencascade
+
+      - name: Compiler
+        shell: msys2 {0}
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j
+
+      - name: Rassembler les DLL (dossier dist)
+        shell: msys2 {0}
+        run: bash packaging/windows/deployer.sh
+
+      - name: Fabriquer l'installateur (Inno Setup)
+        shell: pwsh
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\windows\freetable3d.iss
+          Get-ChildItem installateur
+
+      - name: Publier l'installateur comme artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeTable3D-windows-setup
+          path: installateur/*.exe
+          if-no-files-found: error
