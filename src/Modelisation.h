@@ -61,7 +61,7 @@ TopoDS_Shape assembler(const std::vector<TopoDS_Shape>& formes);
 // Échange de fichiers. Retournent false en cas d'échec.
 bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
                  double deflexion = 0.1);
-bool importerSTEP(const std::string& chemin, TopoDS_Shape& forme);
+bool importerSTEP(const std::string& chemin, std::vector<TopoDS_Shape>& pieces);
 // Export STEP (format d'échange CAO lu par FreeCAD, etc.) ; chaque forme devient un objet distinct.
 bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& chemin);
 
@@ -167,6 +167,9 @@ bool diametreModifiable(const TopoDS_Shape& forme);
 // Change le diamètre d'une sphère (centre fixe) ou d'un cylindre (axe et base fixes,
 // hauteur conservée). Retourne la forme inchangée si elle n'est ni l'un ni l'autre.
 TopoDS_Shape changerDiametre(const TopoDS_Shape& forme, double diametre);
+// Reconstruit une sphère ou un cylindre droit « proprement » à partir de ses paramètres
+// (même résultat qu'un changement de diamètre, sans changer la taille). Autre forme : inchangée.
+TopoDS_Shape reconstruireRond(const TopoDS_Shape& forme);
 
 // Orientation : quaternion de la rotation « autour de X, puis de Y, puis de Z »
 // (angles en degrés, axes fixes du monde) et conversion inverse en angles.

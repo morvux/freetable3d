@@ -1993,14 +1993,17 @@ void MainWindow::importerSTEP()
     if (chemin.isEmpty())
         return;
 
-    TopoDS_Shape forme;
-    if (!modelisation::importerSTEP(chemin.toStdString(), forme))
+    std::vector<TopoDS_Shape> pieces;
+    if (!modelisation::importerSTEP(chemin.toStdString(), pieces))
     {
         QMessageBox::warning(this, tr("Import impossible"),
                              tr("Le fichier n'a pas pu être lu comme un fichier STEP valide."));
         return;
     }
-    ajouterPiece(forme, tr("Import"));
+    // Un objet par pièce du fichier (les assemblages sont éclatés)
+    // (le document ajoute lui-même le numéro : « Import 1 », « Import 2 »...)
+    for (const TopoDS_Shape& piece : pieces)
+        ajouterPiece(piece, tr("Import"));
 }
 
 void MainWindow::exporterSTEP()

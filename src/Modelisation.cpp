@@ -31,6 +31,7 @@
 #include <TopExp.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepLib.hxx>
 #include <BRepClass_FaceClassifier.hxx>
 #include <BRepGProp_Face.hxx>
 #include <BRepTools.hxx>
@@ -58,6 +59,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Solid.hxx>
+#include <TopoDS_Iterator.hxx>
 #include <TopoDS_Face.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Cylinder.hxx>
@@ -578,16 +581,87 @@ bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& ch
     }
 }
 
-bool importerSTEP(const std::string& chemin, TopoDS_Shape& forme)
+namespace
 {
-    STEPControl_Reader lecteur;
-    if (lecteur.ReadFile(chemin.c_str()) != IFSelect_RetDone)
-        return false;
-    if (lecteur.TransferRoots() <= 0)
-        return false;
 
-    forme = lecteur.OneShape();
-    return !forme.IsNull();
+// Éclate récursivement les assemblages (compound) en pièces : chaque solide devient une pièce.
+// Une forme qui n'est pas un solide (coque, face...) est gardée telle quelle.
+void eclaterEnPieces(const TopoDS_Shape& forme, std::vector<TopoDS_Shape>& pieces)
+{
+    if (forme.IsNull())
+        return;
+    switch (forme.ShapeType())
+    {
+    case TopAbs_COMPOUND:
+    case TopAbs_COMPSOLID:
+        for (TopoDS_Iterator it(forme); it.More(); it.Next())
+            eclaterEnPieces(it.Value(), pieces);
+        break;
+    default:
+    {
+        // Normalisation : copie complète de la géométrie (position intégrée aux formes, plus de
+        // décalage de repère hérité du fichier). Comme pour une pièce modifiée à la main, c'est ce
+        // qui rend la pièce sélectionnable et manipulable à la souris. En cas d'échec, on garde l'original.
+        TopoDS_Shape propre = forme;
+        try
+        {
+            BRepBuilderAPI_Transform copie(forme, gp_Trsf(), true);
+            if (copie.IsDone() && !copie.Shape().IsNull())
+                propre = copie.Shape();
+        }
+        catch (const Standard_Failure&)
+        {
+        }
+        // Un solide lu depuis un fichier peut être orienté « à l'envers » (faces tournées vers
+        // l'intérieur) : on le remet à l'endroit, sinon le calcul de sélection peut échouer.
+        if (propre.ShapeType() == TopAbs_SOLID)
+        {
+            try
+            {
+                TopoDS_Solid solide = TopoDS::Solid(propre);
+                if (BRepLib::OrientClosedSolid(solide))
+                    propre = solide;
+            }
+            catch (const Standard_Failure&)
+            {
+            }
+        }
+        pieces.push_back(propre);
+        break;
+    }
+    }
+}
+
+} // namespace
+
+TopoDS_Shape reconstruireRond(const TopoDS_Shape& forme);
+
+bool importerSTEP(const std::string& chemin, std::vector<TopoDS_Shape>& pieces)
+{
+    pieces.clear();
+    try
+    {
+        STEPControl_Reader lecteur;
+        if (lecteur.ReadFile(chemin.c_str()) != IFSelect_RetDone)
+            return false;
+        if (lecteur.TransferRoots() <= 0)
+            return false;
+
+        // Une forme par objet racine du fichier, puis éclatement des assemblages : on retrouve
+        // les objets séparés (sans OneShape(), qui les fusionnerait en une seule pièce).
+        const int nbFormes = lecteur.NbShapes();
+        for (int i = 1; i <= nbFormes; ++i)
+            eclaterEnPieces(lecteur.Shape(i), pieces);
+        // Sphères et cylindres : reconstruits à neuf, comme après un changement de diamètre
+        // (une forme lue d'un fichier peut ne pas être sélectionnable à la souris).
+        for (TopoDS_Shape& piece : pieces)
+            piece = reconstruireRond(piece);
+        return !pieces.empty();
+    }
+    catch (const Standard_Failure&)
+    {
+        return false;
+    }
 }
 
 namespace
@@ -665,6 +739,22 @@ bool diametreModifiable(const TopoDS_Shape& forme)
 {
     const Rond r = analyserRond(forme);
     return r.sphere || r.cylindre;
+}
+
+TopoDS_Shape reconstruireRond(const TopoDS_Shape& forme)
+{
+    const Rond r = analyserRond(forme);
+    try
+    {
+        if (r.sphere)
+            return BRepPrimAPI_MakeSphere(r.centre, r.rayon).Shape();
+        if (r.cylindre)
+            return BRepPrimAPI_MakeCylinder(gp_Ax2(r.centre, r.axe), r.rayon, r.hauteur).Shape();
+    }
+    catch (const Standard_Failure&)
+    {
+    }
+    return forme;
 }
 
 TopoDS_Shape changerDiametre(const TopoDS_Shape& forme, double diametre)
