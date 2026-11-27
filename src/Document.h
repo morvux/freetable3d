@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <utility>
+
 #include <TopoDS_Shape.hxx>
 #include <gp_Quaternion.hxx>
 #include <gp_Trsf.hxx>
@@ -37,6 +39,11 @@ public:
     // Ajoute une pièce nommée « <nomBase> <id> » et retourne son identifiant.
     int ajouter(const TopoDS_Shape& forme, const std::string& nomBase,
                 std::shared_ptr<const Parametrique> parametres = nullptr);
+
+    // Ajoute plusieurs pièces d'un coup avec leur nom exact (import de fichier), en une seule
+    // étape d'annulation. Un nom vide devient « <nomParDefaut> <id> ». Retourne les identifiants.
+    std::vector<int> ajouterPieces(const std::vector<std::pair<TopoDS_Shape, std::string>>& pieces,
+                                   const std::string& nomParDefaut);
 
     // Supprime les pièces indiquées (une seule étape d'annulation).
     void supprimer(const std::vector<int>& ids);

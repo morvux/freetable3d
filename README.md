@@ -67,7 +67,7 @@ Dépendances :
 
     sudo apt install build-essential cmake qt6-base-dev libocct-foundation-dev \
         libocct-modeling-data-dev libocct-modeling-algorithms-dev \
-        libocct-visualization-dev libocct-data-exchange-dev libgl1-mesa-dev
+        libocct-visualization-dev libocct-data-exchange-dev libocct-ocaf-dev libgl1-mesa-dev
 
 Compilation et lancement :
 

@@ -20,6 +20,25 @@ bool contient(const std::vector<int>& ids, int id)
 }
 } // namespace
 
+std::vector<int> Document::ajouterPieces(const std::vector<std::pair<TopoDS_Shape, std::string>>& pieces,
+                                          const std::string& nomParDefaut)
+{
+    std::vector<int> ids;
+    if (pieces.empty())
+        return ids;
+    memoriser();
+    for (const auto& element : pieces)
+    {
+        Piece piece;
+        piece.id    = m_prochainId++;
+        piece.nom   = element.second.empty() ? nomParDefaut + " " + std::to_string(piece.id) : element.second;
+        piece.forme = element.first;
+        m_pieces.push_back(piece);
+        ids.push_back(piece.id);
+    }
+    return ids;
+}
+
 int Document::ajouter(const TopoDS_Shape& forme, const std::string& nomBase,
                       std::shared_ptr<const Parametrique> parametres)
 {

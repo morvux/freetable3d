@@ -304,15 +304,17 @@ void testEchangeFichiers()
     std::filesystem::remove(stl);
 
     const std::string step = fichierTemporaire("freetable3d_test.step");
-    VERIF(modelisation::exporterSTEP({cube}, step));
-    TopoDS_Shape relu;
+    VERIF(modelisation::exporterSTEP({cube}, {"Mon cube"}, step));
+    std::vector<modelisation::PieceImportee> relu;
     VERIF(modelisation::importerSTEP(step, relu));
-    PROCHE(volumeDe(relu), 1000.0, 1.0);
+    VERIF(relu.size() == 1);
+    PROCHE(volumeDe(relu[0].forme), 1000.0, 1.0);
+    VERIF(relu[0].nom == "Mon cube"); // le nom d'origine est conservé
     std::filesystem::remove(step);
 
     // Chemin invalide : échec propre
     VERIF(!modelisation::exporterSTL(cube, "/dossier/inexistant/x.stl"));
-    TopoDS_Shape rien;
+    std::vector<modelisation::PieceImportee> rien;
     VERIF(!modelisation::importerSTEP("/dossier/inexistant/x.step", rien));
 }
 

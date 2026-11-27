@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
 #include <vector>
 #include <set>
 
@@ -53,6 +54,17 @@
 #include <ShapeUpgrade_UnifySameDomain.hxx>
 #include <STEPControl_Reader.hxx>
 #include <STEPControl_Writer.hxx>
+#include <STEPCAFControl_Reader.hxx>
+#include <STEPCAFControl_Writer.hxx>
+#include <TCollection_AsciiString.hxx>
+#include <TCollection_ExtendedString.hxx>
+#include <TDF_Label.hxx>
+#include <TDF_LabelSequence.hxx>
+#include <TDataStd_Name.hxx>
+#include <TDocStd_Document.hxx>
+#include <XCAFApp_Application.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
 #include <StlAPI_Writer.hxx>
 
 #include <TopAbs_Orientation.hxx>
@@ -554,26 +566,76 @@ bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
     return ecrivain.Write(forme, chemin.c_str());
 }
 
-bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& chemin)
+namespace
+{
+
+// Export simple (sans noms) : un objet par forme. Sert de repli.
+bool exporterSTEPSansNoms(const std::vector<TopoDS_Shape>& formes, const std::string& chemin)
+{
+    STEPControl_Writer ecrivain;
+    int                nb = 0;
+    for (const TopoDS_Shape& forme : formes)
+    {
+        if (forme.IsNull())
+            continue;
+        if (ecrivain.Transfer(forme, STEPControl_AsIs) != IFSelect_RetDone)
+            return false;
+        ++nb;
+    }
+    if (nb == 0)
+        return false;
+    return ecrivain.Write(chemin.c_str()) == IFSelect_RetDone;
+}
+
+} // namespace
+
+bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::vector<std::string>& noms,
+                  const std::string& chemin)
 {
     if (formes.empty())
         return false;
 
+    // Avec les noms des pièces : document XDE (structure de produits STEP).
     try
     {
-        STEPControl_Writer ecrivain;
-        int                nb = 0;
-        for (const TopoDS_Shape& forme : formes)
+        Handle(XCAFApp_Application) application = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Document)    document;
+        application->NewDocument("MDTV-XCAF", document);
+        if (!document.IsNull())
         {
-            if (forme.IsNull())
-                continue;
-            if (ecrivain.Transfer(forme, STEPControl_AsIs) != IFSelect_RetDone)
-                return false;
-            ++nb;
+            Handle(XCAFDoc_ShapeTool) outil = XCAFDoc_DocumentTool::ShapeTool(document->Main());
+            int                       nb = 0;
+            for (std::size_t i = 0; i < formes.size(); ++i)
+            {
+                if (formes[i].IsNull())
+                    continue;
+                const TDF_Label etiquette = outil->AddShape(formes[i], Standard_False);
+                if (i < noms.size() && !noms[i].empty())
+                    TDataStd_Name::Set(etiquette, TCollection_ExtendedString(noms[i].c_str(), Standard_True));
+                ++nb;
+            }
+            if (nb > 0)
+            {
+                STEPCAFControl_Writer ecrivain;
+                ecrivain.SetNameMode(Standard_True);
+                if (ecrivain.Transfer(document, STEPControl_AsIs)
+                    && ecrivain.Write(chemin.c_str()) == IFSelect_RetDone)
+                {
+                    application->Close(document);
+                    return true;
+                }
+            }
+            application->Close(document);
         }
-        if (nb == 0)
-            return false;
-        return ecrivain.Write(chemin.c_str()) == IFSelect_RetDone;
+    }
+    catch (const Standard_Failure&)
+    {
+    }
+
+    // Repli : export sans les noms
+    try
+    {
+        return exporterSTEPSansNoms(formes, chemin);
     }
     catch (const Standard_Failure&)
     {
@@ -636,32 +698,119 @@ void eclaterEnPieces(const TopoDS_Shape& forme, std::vector<TopoDS_Shape>& piece
 
 TopoDS_Shape reconstruireRond(const TopoDS_Shape& forme);
 
-bool importerSTEP(const std::string& chemin, std::vector<TopoDS_Shape>& pieces)
+namespace
+{
+
+std::string nomDeEtiquette(const TDF_Label& etiquette)
+{
+    Handle(TDataStd_Name) nom;
+    if (etiquette.IsNull() || !etiquette.FindAttribute(TDataStd_Name::GetID(), nom))
+        return std::string();
+    // Conversion UTF-16 -> UTF-8 (accents conservés)
+    const TCollection_AsciiString ascii(nom->Get());
+    return std::string(ascii.ToCString());
+}
+
+// Parcourt un assemblage XDE : une pièce (forme + nom) par composant.
+void collecterPieces(const Handle(XCAFDoc_ShapeTool)& outil, const TDF_Label& etiquette,
+                     const std::string& nomParent,
+                     std::vector<std::pair<TopoDS_Shape, std::string>>& feuilles)
+{
+    std::string nom = nomDeEtiquette(etiquette);
+    TDF_Label   reference;
+    if (nom.empty() && XCAFDoc_ShapeTool::IsReference(etiquette)
+        && XCAFDoc_ShapeTool::GetReferredShape(etiquette, reference))
+        nom = nomDeEtiquette(reference);
+    if (nom.empty())
+        nom = nomParent;
+
+    if (XCAFDoc_ShapeTool::IsAssembly(etiquette))
+    {
+        TDF_LabelSequence composants;
+        XCAFDoc_ShapeTool::GetComponents(etiquette, composants);
+        for (Standard_Integer i = 1; i <= composants.Length(); ++i)
+            collecterPieces(outil, composants.Value(i), nom, feuilles);
+        return;
+    }
+    const TopoDS_Shape forme = XCAFDoc_ShapeTool::GetShape(etiquette);
+    if (!forme.IsNull())
+        feuilles.emplace_back(forme, nom);
+}
+
+} // namespace
+
+bool importerSTEP(const std::string& chemin, std::vector<PieceImportee>& pieces)
 {
     pieces.clear();
+
+    // 1) Lecture avec les noms (document XDE)
+    std::vector<std::pair<TopoDS_Shape, std::string>> feuilles;
     try
     {
-        STEPControl_Reader lecteur;
-        if (lecteur.ReadFile(chemin.c_str()) != IFSelect_RetDone)
-            return false;
-        if (lecteur.TransferRoots() <= 0)
-            return false;
-
-        // Une forme par objet racine du fichier, puis éclatement des assemblages : on retrouve
-        // les objets séparés (sans OneShape(), qui les fusionnerait en une seule pièce).
-        const int nbFormes = lecteur.NbShapes();
-        for (int i = 1; i <= nbFormes; ++i)
-            eclaterEnPieces(lecteur.Shape(i), pieces);
-        // Sphères et cylindres : reconstruits à neuf, comme après un changement de diamètre
-        // (une forme lue d'un fichier peut ne pas être sélectionnable à la souris).
-        for (TopoDS_Shape& piece : pieces)
-            piece = reconstruireRond(piece);
-        return !pieces.empty();
+        Handle(XCAFApp_Application) application = XCAFApp_Application::GetApplication();
+        Handle(TDocStd_Document)    document;
+        application->NewDocument("MDTV-XCAF", document);
+        if (!document.IsNull())
+        {
+            STEPCAFControl_Reader lecteur;
+            lecteur.SetNameMode(Standard_True);
+            if (lecteur.ReadFile(chemin.c_str()) == IFSelect_RetDone && lecteur.Transfer(document))
+            {
+                Handle(XCAFDoc_ShapeTool) outil = XCAFDoc_DocumentTool::ShapeTool(document->Main());
+                TDF_LabelSequence         libres;
+                outil->GetFreeShapes(libres);
+                for (Standard_Integer i = 1; i <= libres.Length(); ++i)
+                    collecterPieces(outil, libres.Value(i), std::string(), feuilles);
+            }
+            application->Close(document);
+        }
     }
     catch (const Standard_Failure&)
     {
-        return false;
+        feuilles.clear();
     }
+
+    // 2) Repli : lecture simple, sans noms
+    if (feuilles.empty())
+    {
+        try
+        {
+            STEPControl_Reader lecteur;
+            if (lecteur.ReadFile(chemin.c_str()) != IFSelect_RetDone || lecteur.TransferRoots() <= 0)
+                return false;
+            for (int i = 1; i <= lecteur.NbShapes(); ++i)
+                feuilles.emplace_back(lecteur.Shape(i), std::string());
+        }
+        catch (const Standard_Failure&)
+        {
+            return false;
+        }
+    }
+
+    // Une forme du fichier peut contenir plusieurs solides : on les éclate, et on les numérote
+    // à partir du nom d'origine (« Nom 1 », « Nom 2 »...).
+    for (const auto& feuille : feuilles)
+    {
+        std::vector<TopoDS_Shape> morceaux;
+        try
+        {
+            eclaterEnPieces(feuille.first, morceaux);
+        }
+        catch (const Standard_Failure&)
+        {
+            continue;
+        }
+        for (std::size_t k = 0; k < morceaux.size(); ++k)
+        {
+            PieceImportee piece;
+            piece.forme = reconstruireRond(morceaux[k]);
+            piece.nom   = feuille.second;
+            if (!piece.nom.empty() && morceaux.size() > 1)
+                piece.nom += " " + std::to_string(k + 1);
+            pieces.push_back(piece);
+        }
+    }
+    return !pieces.empty();
 }
 
 namespace

@@ -1993,17 +1993,20 @@ void MainWindow::importerSTEP()
     if (chemin.isEmpty())
         return;
 
-    std::vector<TopoDS_Shape> pieces;
+    std::vector<modelisation::PieceImportee> pieces;
     if (!modelisation::importerSTEP(chemin.toStdString(), pieces))
     {
         QMessageBox::warning(this, tr("Import impossible"),
                              tr("Le fichier n'a pas pu être lu comme un fichier STEP valide."));
         return;
     }
-    // Un objet par pièce du fichier (les assemblages sont éclatés)
-    // (le document ajoute lui-même le numéro : « Import 1 », « Import 2 »...)
-    for (const TopoDS_Shape& piece : pieces)
-        ajouterPiece(piece, tr("Import"));
+    // Un objet par pièce du fichier (assemblages éclatés), avec son nom d'origine
+    std::vector<std::pair<TopoDS_Shape, std::string>> nouvelles;
+    for (const modelisation::PieceImportee& piece : pieces)
+        nouvelles.emplace_back(piece.forme, piece.nom);
+    m_document.ajouterPieces(nouvelles, tr("Import").toStdString());
+    rafraichir();
+    m_vue->recadrer();
 }
 
 void MainWindow::exporterSTEP()
@@ -2044,13 +2047,17 @@ void MainWindow::exporterSTEP()
         chemin += ".step";
 
     std::vector<TopoDS_Shape> formes;
+    std::vector<std::string>  noms;
     for (const Piece& piece : m_document.pieces())
     {
         if (!seulementSelection || std::find(idsSel.begin(), idsSel.end(), piece.id) != idsSel.end())
+        {
             formes.push_back(piece.forme);
+            noms.push_back(piece.nom);
+        }
     }
 
-    if (!modelisation::exporterSTEP(formes, chemin.toStdString()))
+    if (!modelisation::exporterSTEP(formes, noms, chemin.toStdString()))
     {
         QMessageBox::warning(this, tr("Export impossible"), tr("L'écriture du fichier STEP a échoué."));
         return;

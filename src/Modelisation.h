@@ -61,9 +61,18 @@ TopoDS_Shape assembler(const std::vector<TopoDS_Shape>& formes);
 // Échange de fichiers. Retournent false en cas d'échec.
 bool exporterSTL(const TopoDS_Shape& forme, const std::string& chemin,
                  double deflexion = 0.1);
-bool importerSTEP(const std::string& chemin, std::vector<TopoDS_Shape>& pieces);
-// Export STEP (format d'échange CAO lu par FreeCAD, etc.) ; chaque forme devient un objet distinct.
-bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::string& chemin);
+// Pièce lue dans un fichier STEP : forme + nom d'origine (vide si le fichier n'en donne pas).
+struct PieceImportee
+{
+    TopoDS_Shape forme;
+    std::string  nom;
+};
+// Import STEP : une pièce par objet du fichier (assemblages éclatés), avec leurs noms.
+bool importerSTEP(const std::string& chemin, std::vector<PieceImportee>& pieces);
+// Export STEP (format d'échange CAO lu par FreeCAD, etc.) ; chaque forme devient un objet distinct,
+// portant le nom correspondant de « noms » (même ordre que « formes »).
+bool exporterSTEP(const std::vector<TopoDS_Shape>& formes, const std::vector<std::string>& noms,
+                  const std::string& chemin);
 
 
 
