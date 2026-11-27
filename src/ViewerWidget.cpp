@@ -191,6 +191,10 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     // Vue : créée ici, mais rattachée à la fenêtre native seulement à l'affichage
     // (voir attacherFenetre) : à ce moment le widget est enfin à sa place dans la fenêtre.
     m_vue = m_viewer->CreateView();
+#ifdef _WIN32
+    // Windows : comportement d'origine (rattachement immédiat), qui fonctionne bien.
+    attacherFenetre();
+#endif
 
     // Grille millimétrique de ±100 mm : lignes fines au mm, lignes marquées tous les 10 mm
     m_grille = new GrilleAxes(100, 1, 10);
@@ -493,8 +497,12 @@ void ViewerWidget::attacherFenetre()
     Handle(Xw_Window) fenetre = new Xw_Window(connexion, static_cast<Aspect_Drawable>(winId()));
 #endif
     m_vue->SetWindow(fenetre);
-    // Pas de Map() explicite : c'est Qt qui affiche la fenêtre native. L'afficher soi-même la
-    // rendait indépendante de la fenêtre principale dans certains environnements.
+#ifdef _WIN32
+    if (!fenetre->IsMapped())
+        fenetre->Map();
+#endif
+    // Sous Linux, pas de Map() explicite : c'est Qt qui affiche la fenêtre native. L'afficher
+    // soi-même la rendait indépendante de la fenêtre principale dans certains environnements.
 
     // Fond en dégradé sombre, lissage des arêtes
     m_vue->SetBackgroundColor(Quantity_Color(0.10, 0.12, 0.15, Quantity_TOC_RGB));
@@ -519,6 +527,9 @@ void ViewerWidget::attacherFenetre()
 // On la recale donc explicitement sur l'emplacement du widget.
 void ViewerWidget::synchroniserFenetreNative()
 {
+#ifdef _WIN32
+    return; // inutile sous Windows (et source de redimensionnements parasites)
+#endif
     QWindow* fenetre = windowHandle();
     if (!fenetre || !isVisible())
         return;
@@ -1946,6 +1957,7 @@ bool ViewerWidget::event(QEvent* evenement)
         }
     }
     // Qt a changé l'identifiant de la fenêtre native (réparentage...) : on rattache la vue à la nouvelle
+    #ifndef _WIN32
     if (evenement->type() == QEvent::WinIdChange && m_fenetreAttachee)
     {
         const bool resultat = QWidget::event(evenement);
@@ -1953,6 +1965,7 @@ bool ViewerWidget::event(QEvent* evenement)
         ajusterVue();
         return resultat;
     }
+#endif
     return QWidget::event(evenement);
 }
 
