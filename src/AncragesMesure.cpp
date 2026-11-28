@@ -88,7 +88,7 @@ bool rigide(const TopoDS_Shape& ancienne, const TopoDS_Shape& nouvelle)
     if (carte(ancienne, TopAbs_FACE).Extent() != carte(nouvelle, TopAbs_FACE).Extent())
         return false;
 
-    const int n = std::min(va.Extent(), 6);
+    const int n = std::min(va.Extent(), 12);
     for (int i = 1; i <= n; ++i)
     {
         const gp_Pnt ai = BRep_Tool::Pnt(TopoDS::Vertex(va(i)));
@@ -219,6 +219,229 @@ bool plusProche(Ancrage& a, const TopoDS_Shape& piece, const gp_Pnt& cible)
         return false;
     a.indice   = indice;
     a.position = trouve;
+    return true;
+}
+
+
+using Prediction = std::function<gp_Pnt(const gp_Pnt&)>;
+
+struct Boite
+{
+    bool   ok = false;
+    double mn[3] = {0.0, 0.0, 0.0};
+    double mx[3] = {0.0, 0.0, 0.0};
+};
+
+Boite boiteDe(const TopoDS_Shape& forme)
+{
+    Boite b;
+    try
+    {
+        Bnd_Box boite;
+        BRepBndLib::AddOptimal(forme, boite, false, false);
+        if (boite.IsVoid())
+            return b;
+        boite.Get(b.mn[0], b.mn[1], b.mn[2], b.mx[0], b.mx[1], b.mx[2]);
+        b.ok = true;
+    }
+    catch (const Standard_Failure&)
+    {
+    }
+    return b;
+}
+
+// Hypothèse « faces extrêmes » : un point posé sur une face de la boîte englobante la suit quand
+// la boîte change ; les autres points ne bougent pas (cas d'une face étirée ou déplacée).
+Prediction predictionFacesExtremes(const Boite& a, const Boite& n)
+{
+    return [a, n](const gp_Pnt& p) {
+        double c[3] = {p.X(), p.Y(), p.Z()};
+        for (int i = 0; i < 3; ++i)
+        {
+            const double eps = 1e-4 * (a.mx[i] - a.mn[i]) + 1e-6;
+            if (std::abs(c[i] - a.mx[i]) <= eps)
+                c[i] = n.mx[i];
+            else if (std::abs(c[i] - a.mn[i]) <= eps)
+                c[i] = n.mn[i];
+        }
+        return gp_Pnt(c[0], c[1], c[2]);
+    };
+}
+
+// Hypothèse « mise à l'échelle » : chaque point garde sa position relative dans la boîte.
+Prediction predictionProportionnelle(const Boite& a, const Boite& n)
+{
+    return [a, n](const gp_Pnt& p) {
+        double c[3] = {p.X(), p.Y(), p.Z()};
+        for (int i = 0; i < 3; ++i)
+        {
+            const double ta = a.mx[i] - a.mn[i];
+            const double tn = n.mx[i] - n.mn[i];
+            c[i] = ta > 1e-9 ? n.mn[i] + (c[i] - a.mn[i]) / ta * tn : c[i] + (n.mn[i] - a.mn[i]);
+        }
+        return gp_Pnt(c[0], c[1], c[2]);
+    };
+}
+
+std::vector<gp_Pnt> sommetsDe(const TopoDS_Shape& forme, std::size_t maximum = 400)
+{
+    std::vector<gp_Pnt>              points;
+    const TopTools_IndexedMapOfShape m = carte(forme, TopAbs_VERTEX);
+    for (int i = 1; i <= m.Extent() && points.size() < maximum; ++i)
+        points.push_back(BRep_Tool::Pnt(TopoDS::Vertex(m(i))));
+    return points;
+}
+
+// Distance moyenne de chaque point de « a » au point le plus proche de « b ».
+double ecartMoyen(const std::vector<gp_Pnt>& a, const std::vector<gp_Pnt>& b)
+{
+    if (a.empty() || b.empty())
+        return 1e100;
+    double total = 0.0;
+    for (const gp_Pnt& p : a)
+    {
+        double plus = 1e100;
+        for (const gp_Pnt& q : b)
+            plus = std::min(plus, p.SquareDistance(q));
+        total += std::sqrt(plus);
+    }
+    return total / static_cast<double>(a.size());
+}
+
+std::vector<gp_Pnt> transformes(const std::vector<gp_Pnt>& points, const Prediction& prediction)
+{
+    std::vector<gp_Pnt> resultat;
+    resultat.reserve(points.size());
+    for (const gp_Pnt& p : points)
+        resultat.push_back(prediction(p));
+    return resultat;
+}
+
+// Quand on ne sait pas comment la pièce a été modifiée, on essaie trois hypothèses (rien ne bouge,
+// faces extrêmes, mise à l'échelle) et on garde celle qui fait le mieux coïncider les sommets.
+Prediction meilleureHypothese(const TopoDS_Shape& ancienne, const TopoDS_Shape& nouvelle)
+{
+    const Boite a = boiteDe(ancienne);
+    const Boite n = boiteDe(nouvelle);
+    if (!a.ok || !n.ok)
+        return nullptr;
+
+    const std::vector<gp_Pnt> va = sommetsDe(ancienne);
+    const std::vector<gp_Pnt> vn = sommetsDe(nouvelle);
+    if (va.empty() || vn.empty())
+        return nullptr;
+
+    const std::vector<Prediction> hypotheses = {
+        [](const gp_Pnt& p) { return p; },
+        predictionFacesExtremes(a, n),
+        predictionProportionnelle(a, n)};
+
+    double     meilleur = 1e100;
+    Prediction retenue;
+    for (const Prediction& h : hypotheses)
+    {
+        const std::vector<gp_Pnt> vp = transformes(va, h);
+        const double score = ecartMoyen(vp, vn) + ecartMoyen(vn, vp);
+        if (score < meilleur - 1e-9)
+        {
+            meilleur = score;
+            retenue  = h;
+        }
+    }
+    return retenue;
+}
+
+// Élément (sommet, arête ou face) de la pièce modifiée qui correspond à l'élément « indiceAncien »
+// de l'ancienne pièce : on compare les sommets attendus avec ceux de chaque candidat.
+int elementCorrespondant(TopAbs_ShapeEnum type, int indiceAncien, const TopoDS_Shape& ancienne,
+                         const TopoDS_Shape& nouvelle, const Prediction& prediction, double diagonale)
+{
+    const TopTools_IndexedMapOfShape anciens = carte(ancienne, type);
+    if (indiceAncien < 1 || indiceAncien > anciens.Extent())
+        return 0;
+    const std::vector<gp_Pnt> attendus = transformes(sommetsDe(anciens(indiceAncien)), prediction);
+    if (attendus.empty())
+        return 0;
+
+    const TopTools_IndexedMapOfShape nouveaux = carte(nouvelle, type);
+    if (nouveaux.Extent() > 5000)
+        return 0;
+
+    double meilleur = 1e100;
+    int    trouve   = 0;
+    for (int i = 1; i <= nouveaux.Extent(); ++i)
+    {
+        const std::vector<gp_Pnt> voisins = sommetsDe(nouveaux(i));
+        if (voisins.empty())
+            continue;
+        const double score = ecartMoyen(attendus, voisins) + ecartMoyen(voisins, attendus);
+        if (score < meilleur)
+        {
+            meilleur = score;
+            trouve   = i;
+        }
+    }
+    if (trouve == 0 || meilleur > 0.25 * diagonale)
+        return 0;
+    return trouve;
+}
+
+// Retrouve l'ancrage dans la pièce modifiée en suivant l'élément auquel il est attaché.
+bool recalerParElement(Ancrage& a, const TopoDS_Shape& ancienne, const TopoDS_Shape& nouvelle,
+                       const Prediction& prediction)
+{
+    TopAbs_ShapeEnum type;
+    switch (a.genre)
+    {
+    case Genre::Sommet:
+        type = TopAbs_VERTEX;
+        break;
+    case Genre::MilieuArete:
+    case Genre::CentreCercle:
+    case Genre::SurArete:
+        type = TopAbs_EDGE;
+        break;
+    case Genre::CentreFace:
+    case Genre::SurFace:
+        type = TopAbs_FACE;
+        break;
+    default:
+        return false;
+    }
+
+    const Boite bn = boiteDe(nouvelle);
+    double      diagonale = 1e100;
+    if (bn.ok)
+    {
+        const double dx = bn.mx[0] - bn.mn[0], dy = bn.mx[1] - bn.mn[1], dz = bn.mx[2] - bn.mn[2];
+        diagonale = std::sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    const int indice = elementCorrespondant(type, a.indice, ancienne, nouvelle, prediction, diagonale);
+    if (indice == 0)
+        return false;
+
+    Ancrage b = a;
+    b.indice  = indice;
+
+    if (a.genre == Genre::SurFace)
+    {
+        const TopTools_IndexedMapOfShape faces = carte(nouvelle, TopAbs_FACE);
+        if (!parametresSurFace(TopoDS::Face(faces(indice)), prediction(a.position), b.u, b.v))
+            return false;
+    }
+    else if (a.genre == Genre::SurArete)
+    {
+        const TopTools_IndexedMapOfShape aretes = carte(nouvelle, TopAbs_EDGE);
+        if (!parametreSurArete(TopoDS::Edge(aretes(indice)), prediction(a.position), b.u))
+            return false;
+    }
+
+    gp_Pnt position;
+    if (!positionDepuisIndice(b, nouvelle, position))
+        return false;
+    b.position = position;
+    a          = b;
     return true;
 }
 
@@ -448,7 +671,16 @@ bool recaler(Ancrage& a, const TopoDS_Shape& ancienne, const TopoDS_Shape& nouve
             }
         }
 
-        // 2. Sinon (étirement, nouvelle forme) : on cherche l'élément du même genre
+        // 2. Sinon (étirement, redimensionnement, nouvelle forme) : on suit l'élément auquel le point
+        //    est attaché, d'après ses sommets. Sans indication, on devine le mouvement des sommets.
+        if (!ancienne.IsNull())
+        {
+            const Prediction mouvement = prediction ? prediction : meilleureHypothese(ancienne, nouvelle);
+            if (mouvement && recalerParElement(a, ancienne, nouvelle, mouvement))
+                return true;
+        }
+
+        // 3. Dernier recours : on cherche l'élément du même genre
         //    le plus proche de l'endroit où on l'attend.
         gp_Pnt prevu = prediction ? prediction(a.position) : a.position;
 

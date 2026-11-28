@@ -53,8 +53,10 @@ bool surElement(const TopoDS_Shape& piece, const TopoDS_Shape& element, int idPi
 // Centre de gravité d'une pièce.
 gp_Pnt centreDePiece(const TopoDS_Shape& piece);
 
-// Retrouve l'ancrage dans la pièce modifiée. « prediction » donne, pour un point, l'endroit où on
-// l'attend (étirement d'une face) ; sans elle, on suppose qu'il n'a pas bougé.
+// Retrouve l'ancrage dans la pièce modifiée, en suivant l'élément (sommet, arête, face) auquel il est
+// attaché. « prediction » donne, pour un point, l'endroit où on l'attend (étirement d'une face) ;
+// sans elle, le mouvement des sommets est deviné (rien ne bouge, faces extrêmes déplacées, ou mise
+// à l'échelle), ce qui couvre les dimensions saisies à la main, l'annulation et le rétablissement.
 // Retourne false si l'ancrage a été perdu (il devient alors un point libre).
 bool recaler(Ancrage& a, const TopoDS_Shape& ancienne, const TopoDS_Shape& nouvelle,
              const std::function<gp_Pnt(const gp_Pnt&)>& prediction = nullptr);

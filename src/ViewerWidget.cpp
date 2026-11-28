@@ -38,6 +38,7 @@
 #include <Graphic3d_Camera.hxx>
 #include <Graphic3d_ZLayerId.hxx>
 #include <Geom_CartesianPoint.hxx>
+#include <SelectMgr_SortCriterion.hxx>
 #include <SelectMgr_ViewerSelector.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <TopoDS_Vertex.hxx>
@@ -183,10 +184,10 @@ ViewerWidget::ViewerWidget(QWidget* parent)
     // OpenCascade utilise des styles distincts selon que l'élément est un objet
     // entier (Dynamic / Selected) ou une partie d'un objet, face ou arête
     // (LocalDynamic / LocalSelected) : il faut régler les quatre.
-    configurerSurbrillance(Prs3d_TypeOfHighlight_Dynamic, grisSurvol, 4.0f);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalDynamic, grisSurvol, 4.0f);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_Selected, orangeSelection, 2.0f);
-    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalSelected, orangeSelection, 2.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_Dynamic, grisSurvol, 8.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalDynamic, grisSurvol, 8.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_Selected, orangeSelection, 5.0f);
+    configurerSurbrillance(Prs3d_TypeOfHighlight_LocalSelected, orangeSelection, 5.0f);
 
     // Vue : créée ici, mais rattachée à la fenêtre native seulement à l'affichage
     // (voir attacherFenetre) : à ce moment le widget est enfin à sa place dans la fenêtre.
@@ -231,9 +232,35 @@ void ViewerWidget::afficherDocument(const Document& document)
         m_contexte->Remove(affiche.objet, false);
     m_objets.clear();
 
+    // Pièces affleurantes (esquisse négative, pièce posée dans une autre) : leurs faces coïncident
+    // et se disputent les pixels, au point qu'une face sélectionnée peut disparaître. Chaque pièce
+    // est donc légèrement avancée selon le nombre de pièces plus grandes qu'elle : la plus petite
+    // passe devant. Le décalage reste inférieur à celui des surbrillances.
+    std::vector<double> tailles;
     for (const Piece& piece : document.pieces())
     {
+        Bnd_Box boite;
+        BRepBndLib::Add(piece.forme, boite, false);
+        tailles.push_back(boite.IsVoid() || boite.IsOpen() ? 0.0 : std::sqrt(boite.SquareExtent()));
+    }
+
+    std::size_t rang = 0;
+    for (const Piece& piece : document.pieces())
+    {
+        const double maTaille = tailles[rang++];
+        int          plusGrandes = 0;
+        for (const double t : tailles)
+        {
+            if (t > maTaille * (1.0 + 1e-6) + 1e-9)
+                ++plusGrandes;
+        }
+
         Handle(AIS_Shape) objet = new AIS_Shape(piece.forme);
+        if (plusGrandes > 0)
+        {
+            const float decalage = -static_cast<float>(std::min(plusGrandes, 3));
+            objet->SetPolygonOffsets(Aspect_POM_Fill, decalage, decalage);
+        }
         objet->SetMaterial(Graphic3d_NameOfMaterial_Plastified); // d'abord la matière,
         objet->SetColor(Quantity_Color(0.62, 0.70, 0.80, Quantity_TOC_RGB)); // puis la couleur
 
@@ -869,6 +896,10 @@ void ViewerWidget::terminerGeste()
 
         if (m_distance != 0.0)
         {
+            // Les points mesurés décrivent déjà la forme étirée affichée : c'est elle la référence
+            // pour les retrouver dans la pièce que le document va recalculer.
+            if (m_formesMesure.count(m_idEtire) != 0)
+                m_formesMesure[m_idEtire] = objet->Shape();
             emit etirementTermine(m_idEtire, m_faceEtiree, m_distance);
         }
         else
@@ -978,10 +1009,10 @@ void ViewerWidget::mousePressEvent(QMouseEvent* evenement)
     // Appui sur un élément DÉJÀ sélectionné : on le déplace (pièce) ou on l'étire (face plane).
     if (!m_esquisseActive && !evenement->modifiers().testFlag(Qt::ShiftModifier))
     {
-        m_contexte->MoveTo(m_dernierePosition.x(), m_dernierePosition.y(), m_vue, false);
-        if (m_contexte->HasDetected())
+        const Handle(SelectMgr_EntityOwner) cible = pointerCurseur(m_dernierePosition, true, false);
+        if (!cible.IsNull())
         {
-            const Handle(SelectMgr_EntityOwner) proprietaire = m_contexte->DetectedOwner();
+            const Handle(SelectMgr_EntityOwner) proprietaire = cible;
             if (!proprietaire.IsNull() && m_contexte->IsSelected(proprietaire))
             {
                 if (m_mode == ModeSelection::Piece && m_outilRotation && preparerOrientation())
@@ -1090,10 +1121,133 @@ void ViewerWidget::mouseMoveEvent(QMouseEvent* evenement)
     }
 }
 
+double ViewerWidget::tailleProprietaire(const Handle(SelectMgr_EntityOwner)& proprietaire) const
+{
+    if (proprietaire.IsNull())
+        return 1e100;
+    const Handle(SelectMgr_SelectableObject) objet = proprietaire->Selectable();
+    if (objet.IsNull())
+        return 1e100;
+    Bnd_Box boite;
+    objet->BoundingBox(boite);
+    if (boite.IsVoid() || boite.IsOpen())
+        return 1e100;
+    return std::sqrt(boite.SquareExtent()); // diagonale de la boîte englobante de la pièce
+}
+
+Handle(SelectMgr_EntityOwner) ViewerWidget::pointerCurseur(const QPoint& position, bool preferSelection, bool cycler)
+{
+    m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
+    if (!m_contexte->HasDetected())
+        return Handle(SelectMgr_EntityOwner)();
+
+    const Handle(SelectMgr_EntityOwner) actuel = m_contexte->DetectedOwner();
+    if (actuel.IsNull())
+        return actuel;
+
+    const auto&         selecteur = m_contexte->MainSelector();
+    const Standard_Integer nb     = selecteur->NbPicked();
+    if (nb < 2)
+        return actuel;
+
+    // Critère de profondeur de l'élément retenu par OpenCascade
+    Standard_Integer rangActuel = 0;
+    for (Standard_Integer i = 1; i <= nb; ++i)
+    {
+        if (selecteur->Picked(i).get() == actuel.get())
+        {
+            rangActuel = i;
+            break;
+        }
+    }
+    if (rangActuel == 0)
+        return actuel;
+    const SelectMgr_SortCriterion reference = selecteur->PickedData(rangActuel);
+
+    // Pendant une mesure, sommets, arêtes et faces sont actifs ensemble : on ne compare que des
+    // éléments de même nature (le sommet l'emporte sur la face, comme avant).
+    auto nature = [this](const Handle(SelectMgr_EntityOwner)& o) {
+        if (!m_mesureActive)
+            return static_cast<int>(-1);
+        const Handle(StdSelect_BRepOwner) brep = Handle(StdSelect_BRepOwner)::DownCast(o);
+        return (!brep.IsNull() && brep->HasShape()) ? static_cast<int>(brep->Shape().ShapeType()) : -2;
+    };
+    const int natureActuel = nature(actuel);
+
+    // Candidats à égalité de profondeur (dans la tolérance de sélection), de la plus petite pièce
+    // à la plus grande.
+    struct Candidat
+    {
+        Handle(SelectMgr_EntityOwner) proprietaire;
+        double                        taille = 0.0;
+    };
+    std::vector<Candidat> egalite;
+    for (Standard_Integer i = 1; i <= nb; ++i)
+    {
+        const SelectMgr_SortCriterion& critere = selecteur->PickedData(i);
+        if (critere.ZLayerPosition != reference.ZLayerPosition)
+            continue;
+        if (std::abs(critere.Depth - reference.Depth) > critere.Tolerance + reference.Tolerance)
+            continue;
+        const Handle(SelectMgr_EntityOwner) proprietaire = selecteur->Picked(i);
+        if (proprietaire.IsNull() || nature(proprietaire) != natureActuel)
+            continue;
+        egalite.push_back({proprietaire, tailleProprietaire(proprietaire)});
+    }
+    if (egalite.size() < 2)
+        return actuel;
+
+    // Tri stable : à taille égale (éléments d'une même pièce), l'ordre d'OpenCascade est conservé.
+    std::stable_sort(egalite.begin(), egalite.end(),
+                     [](const Candidat& a, const Candidat& b) { return a.taille < b.taille - 1e-9; });
+
+    // Si toutes les candidates appartiennent à la même pièce, rien à arbitrer.
+    if (egalite.back().taille - egalite.front().taille <= 1e-9)
+        return actuel;
+
+    Handle(SelectMgr_EntityOwner) choisi = egalite.front().proprietaire;
+
+    std::size_t selectionnee = egalite.size();
+    for (std::size_t i = 0; i < egalite.size(); ++i)
+    {
+        if (m_contexte->IsSelected(egalite[i].proprietaire))
+        {
+            selectionnee = i;
+            break;
+        }
+    }
+    if (selectionnee < egalite.size())
+    {
+        if (preferSelection)
+            choisi = egalite[selectionnee].proprietaire;                          // on déplace celle-là
+        else if (cycler)
+        {
+            // La pièce suivante (de taille différente, donc pas un autre élément de la même pièce)
+            for (std::size_t k = 1; k < egalite.size(); ++k)
+            {
+                const Candidat& autre = egalite[(selectionnee + k) % egalite.size()];
+                if (std::abs(autre.taille - egalite[selectionnee].taille) > 1e-9)
+                {
+                    choisi = autre.proprietaire;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (choisi.get() == actuel.get())
+        return actuel;
+
+    // On amène la désignation sur l'élément choisi (parcours des éléments détectés au même endroit).
+    for (Standard_Integer i = 0; i < nb && m_contexte->DetectedOwner().get() != choisi.get(); ++i)
+        m_contexte->HilightNextDetected(m_vue, false);
+    return choisi;
+}
+
 void ViewerWidget::appliquerSurvol(const QPoint& position)
 {
     m_horlogeSurvol.restart();
-    m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
+    pointerCurseur(position);
     Handle(SelectMgr_EntityOwner) survole;
     if (m_contexte->HasDetected())
         survole = m_contexte->DetectedOwner();
@@ -1152,8 +1306,19 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
                                            ? AIS_SelectionScheme_XOR
                                            : AIS_SelectionScheme_Replace;
 
-    m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
-    m_contexte->SelectDetected(schema);
+    const Handle(SelectMgr_EntityOwner) cible = pointerCurseur(position, false, schema == AIS_SelectionScheme_Replace);
+    if (!cible.IsNull() && cible.get() != m_contexte->DetectedOwner().get())
+    {
+        // Sécurité : la désignation n'a pas suivi, on sélectionne directement l'élément retenu.
+        if (schema == AIS_SelectionScheme_XOR)
+            m_contexte->AddOrRemoveSelected(cible, false);
+        else
+            m_contexte->SetSelected(cible, false);
+    }
+    else
+    {
+        m_contexte->SelectDetected(schema);
+    }
     m_contexte->UpdateCurrentViewer(); // redessine pour afficher la couleur de sélection
     m_dernierSurvol.Nullify();
     emit selectionChangee();
@@ -2108,6 +2273,7 @@ void ViewerWidget::effacerMesure()
     m_ancragesMesure.clear();
     m_formesMesure.clear();
     m_positionsAvantGeste.clear();
+    m_ancragesAvantGeste.clear();
 }
 
 QString ViewerWidget::nomAccroche(ancrage::Genre genre)
@@ -2336,6 +2502,7 @@ void ViewerWidget::memoriserPositionsMesure()
 {
     // Au début d'un geste : positions de départ et forme de départ de chaque pièce mesurée.
     m_positionsAvantGeste.clear();
+    m_ancragesAvantGeste = m_ancragesMesure;
     for (const ancrage::Ancrage& a : m_ancragesMesure)
         m_positionsAvantGeste.push_back(a.position);
 }
@@ -2368,7 +2535,8 @@ void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double di
 {
     // Pendant l'étirement d'une face : un point situé sur cette face la suit, les autres
     // restent attachés à leur élément dans la pièce modifiée.
-    if (m_ancragesMesure.empty() || m_positionsAvantGeste.size() != m_ancragesMesure.size())
+    if (m_ancragesMesure.empty() || m_positionsAvantGeste.size() != m_ancragesMesure.size()
+        || m_ancragesAvantGeste.size() != m_ancragesMesure.size())
         return;
 
     const gp_Pnt   pointFace = m_pointFace;
@@ -2384,7 +2552,9 @@ void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double di
         ancrage::Ancrage& a = m_ancragesMesure[i];
         if (a.idPiece != m_idEtire)
             continue;
-        a.position = m_positionsAvantGeste[i];
+        // On repart de l'ancrage d'origine (numéro d'élément compris) : « m_formeInitiale » est
+        // la forme dont il décrit les éléments.
+        a = m_ancragesAvantGeste[i];
         ancrage::recaler(a, m_formeInitiale, nouvelle, prediction);
     }
     redessinerMesure();
@@ -2442,7 +2612,7 @@ void ViewerWidget::mettreAJourApercuMesure(const QPoint& ecran)
 
 void ViewerWidget::ajouterPointMesure(const QPoint& ecran)
 {
-    m_contexte->MoveTo(ecran.x(), ecran.y(), m_vue, false);
+    pointerCurseur(ecran);
 
     ancrage::Ancrage choix;
     bool             libre = false;

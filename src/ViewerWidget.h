@@ -278,6 +278,14 @@ private:
     void afficherBulle(const QString& texte);
     void masquerBulle();
     void appliquerSurvol(const QPoint& position);
+    // Désignation sous le curseur. Quand deux pièces affleurent (même profondeur), OpenCascade
+    // choisit au hasard, donc toujours la plus grande : on préfère ici la plus petite.
+    //  - preferSelection : si l'une des candidates est déjà sélectionnée, c'est elle (déplacement) ;
+    //  - cycler : un clic sur une candidate déjà sélectionnée passe à la suivante (la plus grande).
+    // Retourne l'élément retenu (nul s'il n'y en a pas).
+    Handle(SelectMgr_EntityOwner) pointerCurseur(const QPoint& position, bool preferSelection = false,
+                                                 bool cycler = false);
+    double tailleProprietaire(const Handle(SelectMgr_EntityOwner)& proprietaire) const;
 
     // --- Mesure ---
     void    activerModesMesure();
@@ -368,6 +376,7 @@ private:
     std::vector<ancrage::Ancrage>           m_ancragesMesure;    // 0, 1 ou 2 points mesurés
     std::map<int, TopoDS_Shape>             m_formesMesure;      // forme des pièces mesurées, à la dernière mise à jour
     std::vector<gp_Pnt>                     m_positionsAvantGeste;
+    std::vector<ancrage::Ancrage>           m_ancragesAvantGeste; // ancrages au début du geste (étirement)
     std::map<int, gp_Pnt>                   m_centresPieces;     // cache des centres de gravité
     Handle(AIS_Point)                       m_marqueurAccroche;  // repère vert du point d'accroche visé
     std::vector<Handle(AIS_Point)>          m_marqueursMesure;
