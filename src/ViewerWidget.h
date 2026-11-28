@@ -286,11 +286,14 @@ private:
     Handle(SelectMgr_EntityOwner) pointerCurseur(const QPoint& position, bool preferSelection = false,
                                                  bool cycler = false);
     double tailleProprietaire(const Handle(SelectMgr_EntityOwner)& proprietaire) const;
+    bool   m_detectionSurchargee = false; // pointerCurseur a remplacé l'élément désigné par OpenCascade
 
     // --- Mesure ---
     void    activerModesMesure();
     void    arreterMesure();
     void    effacerMesure();
+    void    annulerMesurePerdue(const QString& message = QString());
+    bool    pointsMesureConfondus() const; // deux points posés au même endroit : distance nulle
     void    retirerSegmentMesure();
     void    retirerMarqueurAccroche();
     bool    pointMesure(gp_Pnt& point, bool& sommet) const;
@@ -305,7 +308,7 @@ private:
     void    actualiserMesure(const Document& document);
     void    memoriserPositionsMesure();
     void    suivreMesureRigide();
-    void    suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance);
+    void    suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance, bool impossible);
     QString texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail) const;
     static QString nomAccroche(ancrage::Genre genre);
 
@@ -373,6 +376,9 @@ private:
 
     // Mesure de distance
     bool                                    m_mesureActive = false;
+    // Pendant un étirement : un point mesuré a (provisoirement) disparu, la mesure est masquée ;
+    // si c'est encore le cas au relâchement, la mesure est annulée.
+    bool                                    m_mesurePerdueGeste = false;
     std::vector<ancrage::Ancrage>           m_ancragesMesure;    // 0, 1 ou 2 points mesurés
     std::map<int, TopoDS_Shape>             m_formesMesure;      // forme des pièces mesurées, à la dernière mise à jour
     std::vector<gp_Pnt>                     m_positionsAvantGeste;

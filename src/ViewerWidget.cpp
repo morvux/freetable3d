@@ -47,6 +47,7 @@
 #include <gp_Ax2.hxx>
 #include <gp_Circ.hxx>
 #include <BRepGProp.hxx>
+#include <TopExp_Explorer.hxx>
 #include <Bnd_Box.hxx>
 #include <GProp_GProps.hxx>
 #include <GeomAbs_CurveType.hxx>
@@ -232,35 +233,9 @@ void ViewerWidget::afficherDocument(const Document& document)
         m_contexte->Remove(affiche.objet, false);
     m_objets.clear();
 
-    // Pièces affleurantes (esquisse négative, pièce posée dans une autre) : leurs faces coïncident
-    // et se disputent les pixels, au point qu'une face sélectionnée peut disparaître. Chaque pièce
-    // est donc légèrement avancée selon le nombre de pièces plus grandes qu'elle : la plus petite
-    // passe devant. Le décalage reste inférieur à celui des surbrillances.
-    std::vector<double> tailles;
     for (const Piece& piece : document.pieces())
     {
-        Bnd_Box boite;
-        BRepBndLib::Add(piece.forme, boite, false);
-        tailles.push_back(boite.IsVoid() || boite.IsOpen() ? 0.0 : std::sqrt(boite.SquareExtent()));
-    }
-
-    std::size_t rang = 0;
-    for (const Piece& piece : document.pieces())
-    {
-        const double maTaille = tailles[rang++];
-        int          plusGrandes = 0;
-        for (const double t : tailles)
-        {
-            if (t > maTaille * (1.0 + 1e-6) + 1e-9)
-                ++plusGrandes;
-        }
-
         Handle(AIS_Shape) objet = new AIS_Shape(piece.forme);
-        if (plusGrandes > 0)
-        {
-            const float decalage = -static_cast<float>(std::min(plusGrandes, 3));
-            objet->SetPolygonOffsets(Aspect_POM_Fill, decalage, decalage);
-        }
         objet->SetMaterial(Graphic3d_NameOfMaterial_Plastified); // d'abord la matière,
         objet->SetColor(Quantity_Color(0.62, 0.70, 0.80, Quantity_TOC_RGB)); // puis la couleur
 
@@ -775,9 +750,32 @@ void ViewerWidget::mettreAJourEtirement(const QPoint& ecran)
         return; // rien de neuf : on évite de recalculer la pièce
 
     m_distance = distance;
-    m_objetEtire->SetShape(modelisation::etirerFace(m_formeInitiale, m_faceEtiree, distance));
+    const TopoDS_Shape nouvelle = modelisation::etirerFace(m_formeInitiale, m_faceEtiree, distance);
+    m_objetEtire->SetShape(nouvelle);
     m_contexte->Redisplay(m_objetEtire, true);
-    suivreMesureEtirement(m_objetEtire->Shape(), distance);
+
+    // Mesure en cours : l'étirement est-il impossible (échec de l'opération, ou pièce écrasée au-delà
+    // de son épaisseur) ? On ne touche pas à l'affichage de la pièce, on prévient seulement la mesure.
+    bool impossible = false;
+    if (!m_ancragesMesure.empty() && distance != 0.0)
+    {
+        try
+        {
+            bool vide = !TopExp_Explorer(nouvelle, TopAbs_FACE).More();
+            if (!vide && TopExp_Explorer(nouvelle, TopAbs_SOLID).More())
+            {
+                GProp_GProps volume;
+                BRepGProp::VolumeProperties(nouvelle, volume);
+                vide = std::abs(volume.Mass()) < 1e-9;
+            }
+            impossible = vide || nouvelle.IsSame(m_formeInitiale);
+        }
+        catch (const Standard_Failure&)
+        {
+        }
+    }
+    suivreMesureEtirement(nouvelle, distance, impossible);
+    m_contexte->UpdateCurrentViewer(); // la mesure (trait, repères, valeur) se met à jour en direct
 
     const modelisation::Mesures m = modelisation::mesurer(m_objetEtire->Shape());
     QString dimensions;
@@ -900,6 +898,10 @@ void ViewerWidget::terminerGeste()
             // pour les retrouver dans la pièce que le document va recalculer.
             if (m_formesMesure.count(m_idEtire) != 0)
                 m_formesMesure[m_idEtire] = objet->Shape();
+            if (m_mesurePerdueGeste) // un point mesuré a disparu, ou les deux se confondent
+                annulerMesurePerdue(pointsMesureConfondus()
+                                        ? tr("Mesure annulée : les deux points sont maintenant confondus.")
+                                        : QString());
             emit etirementTermine(m_idEtire, m_faceEtiree, m_distance);
         }
         else
@@ -1137,6 +1139,7 @@ double ViewerWidget::tailleProprietaire(const Handle(SelectMgr_EntityOwner)& pro
 
 Handle(SelectMgr_EntityOwner) ViewerWidget::pointerCurseur(const QPoint& position, bool preferSelection, bool cycler)
 {
+    m_detectionSurchargee = false;
     m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
     if (!m_contexte->HasDetected())
         return Handle(SelectMgr_EntityOwner)();
@@ -1187,7 +1190,12 @@ Handle(SelectMgr_EntityOwner) ViewerWidget::pointerCurseur(const QPoint& positio
         const SelectMgr_SortCriterion& critere = selecteur->PickedData(i);
         if (critere.ZLayerPosition != reference.ZLayerPosition)
             continue;
-        if (std::abs(critere.Depth - reference.Depth) > critere.Tolerance + reference.Tolerance)
+        // « À fleur » = écart de profondeur d'au plus ~0,1 mm, quel que soit le zoom. Plus large que
+        // le strict égal : des pièces importées (STEP) affleurent souvent à quelques centièmes de mm
+        // près. Plus étroit que la tolérance d'OpenCascade, qui peut atteindre plusieurs millimètres
+        // et ferait désigner une pièce cachée sous la surface.
+        const double ecartMax = 0.1 + 1e-4 * std::abs(reference.Depth);
+        if (std::abs(critere.Depth - reference.Depth) > ecartMax)
             continue;
         const Handle(SelectMgr_EntityOwner) proprietaire = selecteur->Picked(i);
         if (proprietaire.IsNull() || nature(proprietaire) != natureActuel)
@@ -1241,6 +1249,7 @@ Handle(SelectMgr_EntityOwner) ViewerWidget::pointerCurseur(const QPoint& positio
     // On amène la désignation sur l'élément choisi (parcours des éléments détectés au même endroit).
     for (Standard_Integer i = 0; i < nb && m_contexte->DetectedOwner().get() != choisi.get(); ++i)
         m_contexte->HilightNextDetected(m_vue, false);
+    m_detectionSurchargee = true;
     return choisi;
 }
 
@@ -1307,16 +1316,28 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent* evenement)
                                            : AIS_SelectionScheme_Replace;
 
     const Handle(SelectMgr_EntityOwner) cible = pointerCurseur(position, false, schema == AIS_SelectionScheme_Replace);
-    if (!cible.IsNull() && cible.get() != m_contexte->DetectedOwner().get())
+    bool fait = false;
+    if (!cible.IsNull() && m_detectionSurchargee)
     {
-        // Sécurité : la désignation n'a pas suivi, on sélectionne directement l'élément retenu.
-        if (schema == AIS_SelectionScheme_XOR)
-            m_contexte->AddOrRemoveSelected(cible, false);
-        else
-            m_contexte->SetSelected(cible, false);
+        // Élément choisi par nos soins parmi des faces à fleur : on le sélectionne directement.
+        try
+        {
+            if (schema == AIS_SelectionScheme_XOR)
+                m_contexte->AddOrRemoveSelected(cible, false);
+            else
+                m_contexte->SetSelected(cible, false);
+            fait = m_contexte->NbSelected() > 0 || schema == AIS_SelectionScheme_XOR;
+        }
+        catch (const Standard_Failure&)
+        {
+            fait = false;
+        }
     }
-    else
+    if (!fait)
     {
+        // Cas ordinaire, ou si la sélection directe n'a rien donné : sélection d'OpenCascade,
+        // comme avant (on refait la désignation pour repartir d'un état sain).
+        m_contexte->MoveTo(position.x(), position.y(), m_vue, false);
         m_contexte->SelectDetected(schema);
     }
     m_contexte->UpdateCurrentViewer(); // redessine pour afficher la couleur de sélection
@@ -2274,6 +2295,7 @@ void ViewerWidget::effacerMesure()
     m_formesMesure.clear();
     m_positionsAvantGeste.clear();
     m_ancragesAvantGeste.clear();
+    m_mesurePerdueGeste = false;
 }
 
 QString ViewerWidget::nomAccroche(ancrage::Genre genre)
@@ -2408,17 +2430,21 @@ QString ViewerWidget::texteMesure(const gp_Pnt& a, const gp_Pnt& b, bool detail)
 void ViewerWidget::dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b)
 {
     retirerSegmentMesure();
-    if (a.Distance(b) < 1e-7)
-        return;
+
+    // Points confondus : pas de trait, mais la valeur 0 reste affichée.
+    const bool nulle = a.Distance(b) < 1e-7;
 
     const Quantity_Color bleu(0.15, 0.50, 1.00, Quantity_TOC_RGB);
 
-    m_ligneMesure = new AIS_Shape(BRepBuilderAPI_MakeEdge(a, b).Edge());
-    m_ligneMesure->SetColor(bleu);
-    m_ligneMesure->SetWidth(3.0);
-    m_contexte->Display(m_ligneMesure, AIS_WireFrame, -1, false);
-    // Couche supérieure : le trait reste visible même posé sur une face.
-    m_contexte->SetZLayer(m_ligneMesure, Graphic3d_ZLayerId_Topmost);
+    if (!nulle)
+    {
+        m_ligneMesure = new AIS_Shape(BRepBuilderAPI_MakeEdge(a, b).Edge());
+        m_ligneMesure->SetColor(bleu);
+        m_ligneMesure->SetWidth(3.0);
+        m_contexte->Display(m_ligneMesure, AIS_WireFrame, -1, false);
+        // Couche supérieure : le trait reste visible même posé sur une face.
+        m_contexte->SetZLayer(m_ligneMesure, Graphic3d_ZLayerId_Topmost);
+    }
 
     gp_Pnt milieu((a.X() + b.X()) / 2.0, (a.Y() + b.Y()) / 2.0, (a.Z() + b.Z()) / 2.0);
 
@@ -2441,7 +2467,8 @@ void ViewerWidget::dessinerSegmentMesure(const gp_Pnt& a, const gp_Pnt& b)
 
     m_texteMesure = new AIS_TextLabel();
     m_texteMesure->SetPosition(milieu);
-    m_texteMesure->SetText(TCollection_ExtendedString(texteMesure(a, b, false).toUtf8().constData(), true));
+    m_texteMesure->SetText(TCollection_ExtendedString(
+        texteMesure(a, nulle ? a : b, false).toUtf8().constData(), true));
     m_texteMesure->SetColor(bleu);
     m_texteMesure->SetHeight(18.0);
     m_contexte->Display(m_texteMesure, 0, -1, false);
@@ -2455,6 +2482,11 @@ void ViewerWidget::redessinerMesure()
     for (const Handle(AIS_Point)& marqueur : m_marqueursMesure)
         m_contexte->Remove(marqueur, false);
     m_marqueursMesure.clear();
+    if (m_mesurePerdueGeste)
+    {
+        retirerSegmentMesure(); // un point a disparu pendant l'étirement : rien à montrer
+        return;
+    }
     for (const ancrage::Ancrage& a : m_ancragesMesure)
     {
         Handle(AIS_Point) marqueur;
@@ -2471,6 +2503,8 @@ void ViewerWidget::actualiserMesure(const Document& document)
         return;
 
     m_centresPieces.clear();
+    bool perdue         = false;
+    m_mesurePerdueGeste = false;
     for (ancrage::Ancrage& a : m_ancragesMesure)
     {
         if (a.idPiece == 0)
@@ -2480,10 +2514,23 @@ void ViewerWidget::actualiserMesure(const Document& document)
         {
             a.genre   = ancrage::Genre::Libre; // la pièce a disparu : le point reste où il était
             a.idPiece = 0;
+            perdue = true;
             continue;
         }
         const auto ancienne = m_formesMesure.find(a.idPiece);
-        ancrage::recaler(a, ancienne != m_formesMesure.end() ? ancienne->second : TopoDS_Shape(), piece->forme);
+        if (!ancrage::recaler(a, ancienne != m_formesMesure.end() ? ancienne->second : TopoDS_Shape(), piece->forme))
+            perdue = true; // l'élément mesuré n'existe plus dans la pièce modifiée
+    }
+
+    if (perdue)
+    {
+        annulerMesurePerdue();
+        return;
+    }
+    if (pointsMesureConfondus())
+    {
+        annulerMesurePerdue(tr("Mesure annulée : les deux points sont maintenant confondus."));
+        return;
     }
 
     // Mémorise l'état actuel des pièces concernées pour la prochaine fois.
@@ -2498,9 +2545,27 @@ void ViewerWidget::actualiserMesure(const Document& document)
     redessinerMesure();
 }
 
+bool ViewerWidget::pointsMesureConfondus() const
+{
+    return m_ancragesMesure.size() >= 2
+           && m_ancragesMesure[0].position.Distance(m_ancragesMesure[1].position) < 1e-7;
+}
+
+void ViewerWidget::annulerMesurePerdue(const QString& message)
+{
+    // Un des deux points mesurés n'existe plus, ou les deux se confondent : la mesure n'a plus de
+    // sens, on l'annule au lieu d'afficher 0.
+    effacerMesure();
+    masquerBulle();
+    emit mesureEffectuee(message.isEmpty() ? tr("Mesure annulée : un des points mesurés n'existe plus.")
+                                           : message);
+    m_contexte->UpdateCurrentViewer();
+}
+
 void ViewerWidget::memoriserPositionsMesure()
 {
     // Au début d'un geste : positions de départ et forme de départ de chaque pièce mesurée.
+    m_mesurePerdueGeste = false;
     m_positionsAvantGeste.clear();
     m_ancragesAvantGeste = m_ancragesMesure;
     for (const ancrage::Ancrage& a : m_ancragesMesure)
@@ -2531,7 +2596,7 @@ void ViewerWidget::suivreMesureRigide()
     redessinerMesure();
 }
 
-void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance)
+void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double distance, bool impossible)
 {
     // Pendant l'étirement d'une face : un point situé sur cette face la suit, les autres
     // restent attachés à leur élément dans la pièce modifiée.
@@ -2547,16 +2612,19 @@ void ViewerWidget::suivreMesureEtirement(const TopoDS_Shape& nouvelle, double di
         return std::abs(hauteur) < 1e-6 ? p.Translated(decalage) : p;
     };
 
+    bool perdu = false;
     for (std::size_t i = 0; i < m_ancragesMesure.size(); ++i)
     {
         ancrage::Ancrage& a = m_ancragesMesure[i];
-        if (a.idPiece != m_idEtire)
-            continue;
+        if (m_ancragesAvantGeste[i].idPiece != m_idEtire)
+            continue; // (un point perdu au pas précédent n'a plus de pièce : on regarde l'original)
         // On repart de l'ancrage d'origine (numéro d'élément compris) : « m_formeInitiale » est
         // la forme dont il décrit les éléments.
         a = m_ancragesAvantGeste[i];
-        ancrage::recaler(a, m_formeInitiale, nouvelle, prediction);
+        if (impossible || !ancrage::recaler(a, m_formeInitiale, nouvelle, prediction))
+            perdu = true;
     }
+    m_mesurePerdueGeste = perdu || pointsMesureConfondus();
     redessinerMesure();
 }
 
@@ -2641,6 +2709,10 @@ void ViewerWidget::ajouterPointMesure(const QPoint& ecran)
     if (m_ancragesMesure.size() == 1)
     {
         emit messageApercu(tr("Mesure : premier point posé. Cliquez sur le second point."));
+    }
+    else if (pointsMesureConfondus())
+    {
+        annulerMesurePerdue(tr("Mesure annulée : les deux points sont au même endroit."));
     }
     else
     {
